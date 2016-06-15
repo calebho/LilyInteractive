@@ -34,14 +34,14 @@ def getStory():
     for story in story_dict.keys():
         speak(story)
     while True:
-        s = getInputString()
+        s = getInputStringMultiple()
         story = get_target(s, story_dict.keys(), targets_syn)
         while story == None:
             speak("Sorry, we don't have that story right now.")
             speak("Please try another.")
             for story in story_dict.keys():
                 speak(story)
-            s = getInputString()
+            s = getInputStringMultiple()
             story = get_target(s, story_dict.keys(), targets_syn)
         if story == "quit":
             return None
@@ -83,5 +83,5 @@ def runStory():
 	#run through the story
 	story.walk(player)
 
-runStory()
 
+runStory()
