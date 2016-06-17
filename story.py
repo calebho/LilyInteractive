@@ -24,7 +24,9 @@ class Story(nx.DiGraph):
     @current.setter
     def current(self, node):
         if node in self.neighbors(self._current):
-
+            self._current = node
+        else:
+            raise StoryError("%s is not a neighbor of %s" % (str(node), str(self._current)))
 
     def add_undirected_edge(self, u, v, *args, **kwargs):
         self.add_edge(u, v, *args, **kwargs)
