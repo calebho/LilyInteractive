@@ -3,6 +3,20 @@ import networkx as nx
 class StoryError(Exception):
     pass
 
+class StoryNode(object):
+    """A story node representing a time period in the story
+    """
+
+    def __init__(self):
+        raise NotImplementedError('TODO')
+
+    def __str__(self):
+        raise NotImplementedError('TODO')
+
+    def __hash__(self):
+        raise NotImplementedError('TODO')
+
+
 class Story(nx.DiGraph):
     """The Story class represented as a directed graph
     """
@@ -13,8 +27,10 @@ class Story(nx.DiGraph):
         Parameters:
         start {StoryNode} The starting point of the story
         """
+        # TODO: player field?
         super(Story, self).__init__()
         self._current = start
+
         self.add_node(start)
 
     @property
@@ -43,8 +59,10 @@ class Story(nx.DiGraph):
             ebunch_reversed.append(tuple(new_e))
         self.add_edges_from(ebunch_reversed, *args, **kwargs)
 
-
-
+    def is_finished(self):
+        """Check whether the story is finished (current is a leaf node)
+        """
+        return not self.neighbors(self._current)
 
 '''
 from story_node import StoryNode
