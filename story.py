@@ -1,11 +1,21 @@
 import networkx as nx
 
+class StoryError(Exception):
+    pass
+
 class Story(nx.DiGraph):
     """The Story class represented as a directed graph
     """
-    def __init__(self, *args, **kwargs):
-        super(Story, self).__init__(*args, **kwargs)
-        self._current = None
+
+    def __init__(self, start):
+        """Constructor for Story
+
+        Parameters:
+        start {StoryNode} The starting point of the story
+        """
+        super(Story, self).__init__()
+        self._current = start
+        self.add_node(start)
 
     @property
     def current(self):
@@ -13,7 +23,8 @@ class Story(nx.DiGraph):
 
     @current.setter
     def current(self, node):
-        self._current = node
+        if node in self.neighbors(self._current):
+
 
     def add_undirected_edge(self, u, v, *args, **kwargs):
         self.add_edge(u, v, *args, **kwargs)
@@ -24,7 +35,14 @@ class Story(nx.DiGraph):
 
         ebunch_reversed = []
         for edge in ebunch:
-            new_e
+            new_e = list(edge[:2]).reverse()
+            if len(edge) == 3:
+                new_e.append(edge[2])
+            ebunch_reversed.append(tuple(new_e))
+        self.add_edges_from(ebunch_reversed, *args, **kwargs)
+
+
+
 
 '''
 from story_node import StoryNode
