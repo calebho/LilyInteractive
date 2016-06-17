@@ -1,3 +1,32 @@
+import networkx as nx
+
+class Story(nx.DiGraph):
+    """The Story class represented as a directed graph
+    """
+    def __init__(self, *args, **kwargs):
+        super(Story, self).__init__(*args, **kwargs)
+        self._current = None
+
+    @property
+    def current(self):
+        return self._current
+
+    @current.setter
+    def current(self, node):
+        self._current = node
+
+    def add_undirected_edge(self, u, v, *args, **kwargs):
+        self.add_edge(u, v, *args, **kwargs)
+        self.add_edge(v, u, *args, **kwargs)
+
+    def add_undirected_edges_from(self, ebunch, *args, **kwargs):
+        self.add_edges_from(ebunch, *args, **kwargs)
+
+        ebunch_reversed = []
+        for edge in ebunch:
+            new_e
+
+'''
 from story_node import StoryNode
 from player import Player
 #import ctypes
@@ -30,10 +59,10 @@ class Story(object):
                 return child
 
         #checks if user says node's name in a longer sentence (node's name can be multiple words)
-        stems = []                          #get root of every word to compare                    
+        stems = []                          #get root of every word to compare
         for word in s.lower().split():
             stems.append(stemmer.stem(word))
-        
+
         if "quit" in s:
             return None
 
@@ -46,28 +75,28 @@ class Story(object):
             if count == len(c):         #if the user said every word in current.child's name
                 return current.children[current.children_stems.index(c)]
         return current
-        
+
     def prereqsValid(self, player, newCurrent):
         for prereq in newCurrent.prereqs:
             if not prereq in player.completed.keys() or player.completed[prereq] == False:
                 speak("You do not have your " + prereq + " yet! Choose somewhere else to go.")
                 return False
         return True
-                
+
     # moves the player to the next node in the story based on getNextNode
     def nextNode(self, player):
 	# sets current working node to the players present position
         current = player.location
-		
-	# automated greeting for node 
+
+	# automated greeting for node
 	# TODO develop better automated 'welcome'
         #speak("Welcome to the " + current.name)
-		
+
 	# a node can have multiple activities associated with it
 	# each activity must be completed before moving to next node
         s = current.activity.doActivity(player)
-	
-		
+
+
 	# prompts user to choose next node out of options
         #speak("You are at the " + current.name + ". Where would you like to go now?")
         #self.printChildren(current)
@@ -87,8 +116,8 @@ class Story(object):
         #once a valid choice is made set current node then return it
 
         return newCurrent
-    
-            
+
+
     def walk(self, player):                         # function to 'play' the story
         while player.location != None:              # while there are still nodes to visit, visit them using nextNode
             player.location = self.nextNode(player)
@@ -96,5 +125,4 @@ class Story(object):
     def printChildren(self, current):
         for index,child in enumerate(current.children):
             speak(child.name)
-
-
+'''
