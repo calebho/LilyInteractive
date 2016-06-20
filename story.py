@@ -7,15 +7,28 @@ class StoryNode(object):
     """A story node representing a time period in the story
     """
 
-    def __init__(self):
-        raise NotImplementedError('TODO')
+    def __init__(self, name, activity):
+        """StoryNode constructor
+
+        Parameters:
+        name {str} The name of the node
+        activity {callable} A function representing an activity
+        """
+        self._name = name
+        self._activity = activity
+
+    @property
+    def name(self):
+        return self._name
+
+    def __call__(self, *args, **kwargs):
+        self._activity(*args, **kwargs)
 
     def __str__(self):
-        raise NotImplementedError('TODO')
+        return self._name
 
     def __hash__(self):
-        raise NotImplementedError('TODO')
-
+        return hash(repr(self))
 
 class Story(nx.DiGraph):
     """The Story class represented as a directed graph
