@@ -4,12 +4,31 @@ def get_keys(d):
     """Recursively get the keys of a nested dictionary and return them as a set
     """
     to_ret = set()
-    for k, v in d:
+    for k, v in d.iteritems():
         to_ret.add(k)
         if type(v) is dict:
             to_ret = to_ret | get_keys(v) # union
 
     return to_ret
+
+def get_value(d, k):
+    """Given a nested dict `d` and a key `k`, get the value of d at `k`
+
+    Returns: {dict} If `k` is not a leaf {None} If `k` is a leaf or `k` does not
+             exist
+    """
+    if not d:
+        return
+
+    keys = d.keys()
+    if k in keys:
+        return d[k]
+    else:
+        for v in d.itervalues():
+            to_ret = get_value(v, k)
+            if to_ret:
+                return to_ret
+        return
 
 class StoryError(Exception):
     pass
@@ -27,8 +46,6 @@ class StoryNode(object):
         """
         self._name = name
         self._activity = activity
-
-        self.visited = False
 
     @property
     def name(self):
@@ -57,8 +74,10 @@ class Story(nx.DiGraph):
         # TODO: player field?
         super(Story, self).__init__()
         self._current = start
-        # self._dep_tree = dependencies
-        # self._deps = get_keys(dependencies)
+        self._visited = set([start])
+        if dependencies:
+            self._dep_tree = dependencies
+            # self._deps = get_keys(dependencies)
 
         super(Story, self).add_node(start)
 
@@ -69,9 +88,33 @@ class Story(nx.DiGraph):
     @current.setter
     def current(self, node):
         if node in self.neighbors(self._current):
-            self._current = node
+            if self._check_deps(node):
+                self._current = node
         else:
-            raise StoryError("%s is not a neighbor of %s" % (str(node), str(self._current)))
+            raise StoryError("%s is not a neighbor of %s" % \
+                             (str(node), str(self._current)))
+
+    def _check_deps(self, node):
+        """Check whether StoryNode `node` has any dependencies
+
+        Returns: {bool} True if no dependencies or dependencies fulfilled; False
+                 otherwise
+        """
+        return True # TODO
+        
+        if not hasattr(self, _dep_tree):
+            return True
+
+        v = get_value(self._dep_tree, node)
+        if v:
+            deps = get_keys(v)
+            for dep in deps:
+                if dep not in self._visited:
+                    return False
+            return True
+        else:
+            return True
+
 
     def remove_node(self, n):
         if self._current == n:
