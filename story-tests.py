@@ -1,6 +1,6 @@
 import unittest
 
-from story import Story, StoryError
+from story import Story, StoryError, get_keys
 
 class StoryTests(unittest.TestCase):
 
@@ -46,6 +46,20 @@ class StoryTests(unittest.TestCase):
             other_nodes = nodes[0:i] + nodes[i+1:]
             for other_node in other_nodes:
                 self.assertTrue(other_node in self.s.neighbors(node))
+
+class GetKeysTests(unittest.TestCase):
+
+    def test_empty(self):
+        d = {}
+        self.assertEqual(set(), get_keys(d))
+        
+    def test_simple(self):
+        d = {'a': 1, 'b': 2, 'c': 3}
+        self.assertEqual(set(['a', 'b', 'c']), get_keys(d))
+
+    def test_nested(self):
+        d = {'a': {'b': None, 'c': None}}
+        self.assertEqual(set(['a', 'b', 'c']), get_keys(d))
 
 if __name__ == '__main__':
     unittest.main()
