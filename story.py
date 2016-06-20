@@ -31,7 +31,7 @@ class Story(nx.DiGraph):
         super(Story, self).__init__()
         self._current = start
 
-        self.add_node(start)
+        super(Story, self).add_node(start)
 
     @property
     def current(self):
@@ -50,11 +50,11 @@ class Story(nx.DiGraph):
         super(Story, self).remove_node(n)
 
     def add_undirected_edge(self, u, v, *args, **kwargs):
-        self.add_edge(u, v, *args, **kwargs)
-        self.add_edge(v, u, *args, **kwargs)
+        super(Story, self).add_edge(u, v, *args, **kwargs)
+        super(Story, self).add_edge(v, u, *args, **kwargs)
 
     def add_undirected_edges_from(self, ebunch, *args, **kwargs):
-        self.add_edges_from(ebunch, *args, **kwargs)
+        super(Story, self).add_edges_from(ebunch, *args, **kwargs)
 
         ebunch_reversed = []
         for edge in ebunch:
@@ -62,12 +62,12 @@ class Story(nx.DiGraph):
             if len(edge) == 3:
                 new_e.append(edge[2])
             ebunch_reversed.append(tuple(new_e))
-        self.add_edges_from(ebunch_reversed, *args, **kwargs)
+        super(Story, self).add_edges_from(ebunch_reversed, *args, **kwargs)
 
     def is_finished(self):
         """Check whether the story is finished (current is a leaf node)
         """
-        return not self.neighbors(self._current)
+        return not super(Story, self).neighbors(self._current)
 
 '''
 from story_node import StoryNode
