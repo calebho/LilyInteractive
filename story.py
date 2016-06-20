@@ -1,5 +1,16 @@
 import networkx as nx
 
+def get_keys(d):
+    """Recursively get the keys of a nested dictionary and return them as a set
+    """
+    to_ret = set()
+    for k, v in d:
+        to_ret.add(k)
+        if type(v) is dict:
+            to_ret = to_ret | get_keys(v) # union
+
+    return to_ret
+
 class StoryError(Exception):
     pass
 
@@ -16,6 +27,8 @@ class StoryNode(object):
         """
         self._name = name
         self._activity = activity
+
+        self.visited = False
 
     @property
     def name(self):
@@ -34,15 +47,18 @@ class Story(nx.DiGraph):
     """The Story class represented as a directed graph
     """
 
-    def __init__(self, start):
+    def __init__(self, start, dependencies=None):
         """Constructor for Story
 
         Parameters:
         start {StoryNode} The starting point of the story
+        dependencies {dict} A tree describing StoryNode dependencies
         """
         # TODO: player field?
         super(Story, self).__init__()
         self._current = start
+        # self._dep_tree = dependencies
+        # self._deps = get_keys(dependencies)
 
         super(Story, self).add_node(start)
 
