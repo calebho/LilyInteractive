@@ -44,6 +44,11 @@ class Story(nx.DiGraph):
         else:
             raise StoryError("%s is not a neighbor of %s" % (str(node), str(self._current)))
 
+    def remove_node(self, n):
+        if self._current == n:
+            raise StoryError('Cannot remove current node')
+        super(Story, self).remove_node(n)
+
     def add_undirected_edge(self, u, v, *args, **kwargs):
         self.add_edge(u, v, *args, **kwargs)
         self.add_edge(v, u, *args, **kwargs)
