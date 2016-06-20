@@ -69,15 +69,14 @@ class Story(nx.DiGraph):
 
         Parameters:
         start {StoryNode} The starting point of the story
-        dependencies {dict} A tree describing StoryNode dependencies
+        dependencies {dict} A tree describing StoryNode dependencies. Leaves
+                            should have value None
         """
         # TODO: player field?
         super(Story, self).__init__()
         self._current = start
         self._visited = set([start])
-        if dependencies:
-            self._dep_tree = dependencies
-            # self._deps = get_keys(dependencies)
+        self._dep_tree = dependencies
 
         super(Story, self).add_node(start)
 
@@ -98,11 +97,9 @@ class Story(nx.DiGraph):
         """Check whether StoryNode `node` has any dependencies
 
         Returns: {bool} True if no dependencies or dependencies fulfilled; False
-                 otherwise
+                        otherwise
         """
-        return True # TODO
-        
-        if not hasattr(self, _dep_tree):
+        if not self._dep_tree:
             return True
 
         v = get_value(self._dep_tree, node)
