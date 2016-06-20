@@ -1,6 +1,6 @@
 import unittest
 
-from story import Story, StoryError, get_keys
+from story import Story, StoryError, get_keys, get_value
 
 class StoryTests(unittest.TestCase):
 
@@ -47,19 +47,38 @@ class StoryTests(unittest.TestCase):
             for other_node in other_nodes:
                 self.assertTrue(other_node in self.s.neighbors(node))
 
+    def test_check_dependencies(self):
+        raise NotImplementedError('TODO')
+
 class GetKeysTests(unittest.TestCase):
 
     def test_empty(self):
         d = {}
         self.assertEqual(set(), get_keys(d))
-        
+
     def test_simple(self):
-        d = {'a': 1, 'b': 2, 'c': 3}
+        d = dict.fromkeys('abc')
         self.assertEqual(set(['a', 'b', 'c']), get_keys(d))
 
     def test_nested(self):
         d = {'a': {'b': None, 'c': None}}
         self.assertEqual(set(['a', 'b', 'c']), get_keys(d))
+
+class GetValueTests(unittest.TestCase):
+
+    def test_empty(self):
+        d = {}
+        self.assertEqual(None, get_value(d, 'a'))
+
+    def test_simple(self):
+        d = dict.fromkeys('abc')
+        self.assertEqual(None, get_value(d, 'a'))
+        self.assertEqual(None, get_value(d, 'd'))
+
+    def test_nested(self):
+        d = {'a': dict.fromkeys('bc')}
+        self.assertEqual(dict.fromkeys('bc'), get_value(d, 'a'))
+        self.assertEqual(None, get_value(d, 'b'))
 
 if __name__ == '__main__':
     unittest.main()
