@@ -58,7 +58,8 @@ class Story(nx.DiGraph):
 
         ebunch_reversed = []
         for edge in ebunch:
-            new_e = list(edge[:2]).reverse()
+            new_e = list(edge[:2])
+            new_e.reverse()
             if len(edge) == 3:
                 new_e.append(edge[2])
             ebunch_reversed.append(tuple(new_e))
