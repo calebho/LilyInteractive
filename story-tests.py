@@ -1,6 +1,6 @@
 import unittest
 
-from story import Story, StoryError, get_keys, get_value
+from story import Story, StoryNode, StoryError, get_keys, get_value
 
 class StoryTests(unittest.TestCase):
 
@@ -54,12 +54,30 @@ class StoryTests(unittest.TestCase):
         t.add_undirected_edges_from(edges)
 
         with self.assertRaises(StoryError):
-            # 'b' not visited yet 
+            # 'b' not visited yet
             t.current = 'c'
         self.assertTrue(t.current == 'a')
 
         t.current = 'b'
         t.current = 'c'
+
+    def test_story_node(self):
+        foo = lambda: None
+        a = StoryNode('a', foo)
+        b = StoryNode('b', foo)
+        c = StoryNode('c', foo)
+
+        self.assertTrue(str(a) == 'a')
+        self.assertFalse(a())
+
+        t = Story(a)
+        t.add_edge(a, b)
+        t.add_edge(a, c)
+        self.assertTrue(b in t.neighbors(a))
+        self.assertTrue(c in t.neighbors(a))
+        self.assertFalse(t.neighbors(b))
+        self.assertFalse(t.neighbors(c))
+
 
 class GetKeysTests(unittest.TestCase):
 
