@@ -64,54 +64,78 @@ class Story(nx.DiGraph):
     """The Story class represented as a directed graph
     """
 
-    def __init__(self, start, dependencies=None):
+    def __init__(self, start, dependencies={}):
         """Constructor for Story
 
         Parameters:
         start {StoryNode} The starting point of the story
-        dependencies {dict} A tree describing StoryNode dependencies. Leaves
+        dependencies {dict} A tree describing StoryNode dependencies. Leaf nodes
                             should have value None
         """
         # TODO: player field?
         super(Story, self).__init__()
         self._current = start
         self._visited = set([start])
-        self._dep_tree = dependencies
+        self._dependencies = None
+        self.dependencies = dependencies
 
         super(Story, self).add_node(start)
+
 
     @property
     def current(self):
         return self._current
 
+    @property
+    def dependencies(self):
+        return self._dependencies
+
+    @property
+    def visited(self):
+        return self._visited
+
     @current.setter
     def current(self, node):
         if node in self.neighbors(self._current):
-            if self._check_deps(node):
+            unmet_deps = self._check_deps(node)
+            if unmet_deps:
+                s = "[%s] has unmet dependencies: " % str(node)
+                for dep in unmet_deps:
+                    s += "[%s] " % str(dep)
+                raise StoryError(s)
+            else:
                 self._current = node
+                self._visited.add(node)
         else:
             raise StoryError("%s is not a neighbor of %s" % \
                              (str(node), str(self._current)))
 
+    @dependencies.setter
+    def dependencies(self, d):
+        """Sets the dependencies attribute. Adds nodes to the graph if necessary
+        """
+        nodes = get_keys(d)
+        for node in nodes:
+            if not super(Story, self).has_node(node):
+                super(Story, self).add_node(node)
+
+        self._dependencies = d
+
     def _check_deps(self, node):
         """Check whether StoryNode `node` has any dependencies
 
-        Returns: {bool} True if no dependencies or dependencies fulfilled; False
-                        otherwise
+        Returns: {list} The list of unmet dependencies
         """
-        if not self._dep_tree:
-            return True
-
-        v = get_value(self._dep_tree, node)
+        unmet_deps = []
+        v = get_value(self._dependencies, node)
         if v:
             deps = get_keys(v)
             for dep in deps:
                 if dep not in self._visited:
-                    return False
-            return True
+                    unmet_deps.append(dep)
+            return unmet_deps
         else:
-            return True
-
+            return []
 
     def remove_node(self, n):
         if self._current == n:

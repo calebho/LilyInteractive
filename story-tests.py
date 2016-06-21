@@ -48,7 +48,18 @@ class StoryTests(unittest.TestCase):
                 self.assertTrue(other_node in self.s.neighbors(node))
 
     def test_check_dependencies(self):
-        raise NotImplementedError('TODO')
+        d = {'c': {'b': None}}
+        t = Story('a', dependencies=d)
+        edges = [('a', 'b'), ('b', 'c'), ('a', 'c')]
+        t.add_undirected_edges_from(edges)
+
+        with self.assertRaises(StoryError):
+            # 'b' not visited yet 
+            t.current = 'c'
+        self.assertTrue(t.current == 'a')
+
+        t.current = 'b'
+        t.current = 'c'
 
 class GetKeysTests(unittest.TestCase):
 
