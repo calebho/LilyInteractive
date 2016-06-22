@@ -39,22 +39,22 @@ class StoryNode(object):
     """A story node representing a time period in the story
     """
 
-    def __init__(self, name, activity):
+    def __init__(self, name, action):
         """StoryNode constructor
 
         Parameters:
         name {str} The name of the node. Should be unique
-        activity {callable} A function representing an activity
+        action {callable} A function representing an action
         """
         self._name = name
-        self._activity = activity
+        self._action = action
 
     @property
     def name(self):
         return self._name
 
     def __call__(self, *args, **kwargs):
-        self._activity(*args, **kwargs)
+        return self._action(*args, **kwargs)
 
     def __str__(self):
         return self._name
