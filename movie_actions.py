@@ -93,19 +93,20 @@ def concessions(menu):
     return None
     '''
 
-def ticketCheckerActivity(player):
+def ticket_checker(movie_name):
+    """Checks the user's ticket and gives directions to the corresponding
+    theater
+    """
     speak("Hello, ticket please.")
-    if player.completed["ticket"].lower() == "inside out":
+    if movie_name == "inside out":
         speak("Inside Out is in theater 3 A, enjoy the show!")
-    if player.completed["ticket"].lower() == "tomorrowland":
+    if movie_name == "tomorrowland":
         speak("Tomorrowland is in theater 1 D, enjoy your movie!")
-    if player.completed["ticket"].lower() == "minions":
+    if movie_name == "minions":
         speak("Minions is in theater 3 B, enjoy the show!")
-    if player.completed["ticket"].lower() == "home":
+    if movie_name == "home":
         speak("Home is in theater 1 A, enjoy your movie!")
     speak("Say movie to sit down and watch.")
-
-    return None
 
 def movieActivity(player):
 	speak("Please power off your cellular devices.")
