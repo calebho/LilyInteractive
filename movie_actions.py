@@ -111,26 +111,26 @@ def ticket_checker(movie_name):
 def watch_movie(movie_name):
     """Plays the movie
     """
-	speak("Please power off your cellular devices.")
-	speak("Sit back, relax and enjoy the show.")
-	win32com.client.Dispatch("WScript.Shell").SendKeys('{ESC}')
-	if movie_name == "inside out":
-		webbrowser.open("https://www.youtube.com/watch?v=_MC3XuMvsDI", new=1)
-		fullscreen(130)
+    speak("Please power off your cellular devices.")
+    speak("Sit back, relax and enjoy the show.")
+    win32com.client.Dispatch("WScript.Shell").SendKeys('{ESC}')
+    if movie_name == "inside out":
+        webbrowser.open("https://www.youtube.com/watch?v=_MC3XuMvsDI", new=1)
+        fullscreen(130)
 
-	if movie_name == "tomorrowland":
-		webbrowser.open("https://www.youtube.com/watch?v=1k59gXTWf-A", new=1)
-		fullscreen(132)
+    if movie_name == "tomorrowland":
+        webbrowser.open("https://www.youtube.com/watch?v=1k59gXTWf-A", new=1)
+        fullscreen(132)
 
-	if movie_name == "minions":
-		webbrowser.open("https://www.youtube.com/watch?v=eisKxhjBnZ0", new=1)
-		fullscreen(167)
+    if movie_name == "minions":
+        webbrowser.open("https://www.youtube.com/watch?v=eisKxhjBnZ0", new=1)
+        fullscreen(167)
 
-	if movie_name == "home":
-		webbrowser.open("https://www.youtube.com/watch?v=MyqZf8LiWvM", new=1)
-		fullscreen(150)
+    if movie_name == "home":
+        webbrowser.open("https://www.youtube.com/watch?v=MyqZf8LiWvM", new=1)
+        fullscreen(150)
 
-	return "quit"
+    return "quit"
 
 #checks if user says a target phrase in a longer sentence (phrase can be multiple words)
 def inList(lst, s):
@@ -157,8 +157,8 @@ def inList(lst, s):
 
 
 def fullscreen(length):
-	time.sleep(10)
-	win32com.client.Dispatch("WScript.Shell").SendKeys('f')
-	time.sleep(length)
-	win32com.client.Dispatch("WScript.Shell").SendKeys('f')
-	win32com.client.Dispatch("WScript.Shell").SendKeys('%{F4}',0)
+    time.sleep(10)
+    win32com.client.Dispatch("WScript.Shell").SendKeys('f')
+    time.sleep(length)
+    win32com.client.Dispatch("WScript.Shell").SendKeys('f')
+    win32com.client.Dispatch("WScript.Shell").SendKeys('%{F4}',0)
