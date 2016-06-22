@@ -10,13 +10,11 @@ stemmer = SnowballStemmer('english')
 
 #activities must return None or the name of the next node or "quit"
 
-def theaterActivity(player):
+def movie_greeting(name):
     speak("Hello! Welcome to the Lehigh Valley Movie Theater")
     speak("You can go to the box office and get your ticket")
     speak("Or you can go to the concessions for some snacks.")
-    speak("Where would you like to go, " + player.name + "?")
-
-    return None
+    speak("Where would you like to go, " + name + "?")
 
 def boxOfficeActivity(player, box_args):
     speak("Welcome to the box office")
@@ -88,15 +86,15 @@ def movieActivity(player):
 	if player.completed["ticket"].lower() == "tomorrowland":
 		webbrowser.open("https://www.youtube.com/watch?v=1k59gXTWf-A", new=1)
 		fullscreen(132)
-		
+
 	if player.completed["ticket"].lower() == "minions":
 		webbrowser.open("https://www.youtube.com/watch?v=eisKxhjBnZ0", new=1)
 		fullscreen(167)
-		
+
 	if player.completed["ticket"].lower() == "home":
 		webbrowser.open("https://www.youtube.com/watch?v=MyqZf8LiWvM", new=1)
 		fullscreen(150)
-		
+
 	return "quit"
 
 #checks if user says a target phrase in a longer sentence (phrase can be multiple words)
@@ -104,7 +102,7 @@ def inList(lst, s):
     for x in lst:                   #if you say exactly phrase in list
         if s.lower() == x.lower():
             return lst.index(x)
-    if "quit" in s.lower().split(): 
+    if "quit" in s.lower().split():
         return None
     s = s.lower().split()           #check if you said phrase inside a longer sentence
     temp = []
@@ -121,7 +119,7 @@ def inList(lst, s):
         if count == len(words):      #if you said every word in l
             return lst.index(l)
     return -1
-        
+
 
 def fullscreen(length):
 	time.sleep(10)
@@ -129,4 +127,3 @@ def fullscreen(length):
 	time.sleep(length)
 	win32com.client.Dispatch("WScript.Shell").SendKeys('f')
 	win32com.client.Dispatch("WScript.Shell").SendKeys('%{F4}',0)
-       
