@@ -10,7 +10,7 @@ def movie_story_factory():
     box_office = StoryNode('box office', actions.box_office)
     concessions = StoryNode('concessions', actions.concessions)
     ticket_checker = StoryNode('ticket checker', actions.ticket_checker)
-    movie = StoryNode('movie', theater.movieActivity)
+    movie = StoryNode('watch movie', actions.watch_movie)
 
     dependencies = {ticket_checker: {box_office: None}}
 

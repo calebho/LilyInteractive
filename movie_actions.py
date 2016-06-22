@@ -108,23 +108,25 @@ def ticket_checker(movie_name):
         speak("Home is in theater 1 A, enjoy your movie!")
     speak("Say movie to sit down and watch.")
 
-def movieActivity(player):
+def watch_movie(movie_name):
+    """Plays the movie
+    """
 	speak("Please power off your cellular devices.")
 	speak("Sit back, relax and enjoy the show.")
 	win32com.client.Dispatch("WScript.Shell").SendKeys('{ESC}')
-	if player.completed["ticket"].lower() == "inside out":
+	if movie_name == "inside out":
 		webbrowser.open("https://www.youtube.com/watch?v=_MC3XuMvsDI", new=1)
 		fullscreen(130)
 
-	if player.completed["ticket"].lower() == "tomorrowland":
+	if movie_name == "tomorrowland":
 		webbrowser.open("https://www.youtube.com/watch?v=1k59gXTWf-A", new=1)
 		fullscreen(132)
 
-	if player.completed["ticket"].lower() == "minions":
+	if movie_name == "minions":
 		webbrowser.open("https://www.youtube.com/watch?v=eisKxhjBnZ0", new=1)
 		fullscreen(167)
 
-	if player.completed["ticket"].lower() == "home":
+	if movie_name == "home":
 		webbrowser.open("https://www.youtube.com/watch?v=MyqZf8LiWvM", new=1)
 		fullscreen(150)
 
