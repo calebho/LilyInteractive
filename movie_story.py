@@ -1,4 +1,4 @@
-import theater_acts as theater
+import movie_actions as actions
 
 from story import Story, StoryNode
 from collections import namedtuple
@@ -7,7 +7,7 @@ def movie_story_factory():
     """Create and return the movie story
     """
     # TODO: callables broken
-    start = StoryNode('start', theater.theaterActivity)
+    start = StoryNode('start', actions.movie_greeting)
     box_office = StoryNode('box office', theater.boxOfficeActivity)
     concessions = StoryNode('concessions', theater.concessionsActivity)
     ticket_checker = StoryNode('ticket checker', theater.ticketCheckerActivity)
