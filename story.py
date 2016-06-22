@@ -1,5 +1,7 @@
 import networkx as nx
 
+from copy import deepcopy
+
 def get_keys(d):
     """Recursively get the keys of a nested dictionary and return them as a set
     """
@@ -41,7 +43,7 @@ class StoryNode(object):
         """StoryNode constructor
 
         Parameters:
-        name {str} The name of the node
+        name {str} The name of the node. Should be unique
         activity {callable} A function representing an activity
         """
         self._name = name
@@ -58,7 +60,7 @@ class StoryNode(object):
         return self._name
 
     def __hash__(self):
-        return hash(repr(self))
+        return hash(self._name)
 
 class Story(nx.DiGraph):
     """The Story class represented as a directed graph
@@ -88,11 +90,11 @@ class Story(nx.DiGraph):
 
     @property
     def dependencies(self):
-        return self._dependencies
+        return deepcopy(self._dependencies)
 
     @property
     def visited(self):
-        return self._visited
+        return deepcopy(self._visited)
 
     @current.setter
     def current(self, node):
@@ -113,7 +115,11 @@ class Story(nx.DiGraph):
     @dependencies.setter
     def dependencies(self, d):
         """Sets the dependencies attribute. Adds nodes to the graph if necessary
+
+        Parameters:
+        d {dict} A nested dictionary representing the dependency tree
         """
+        d = deepcopy(d) # dictionaries are mutable
         nodes = get_keys(d)
         for node in nodes:
             if not super(Story, self).has_node(node):
