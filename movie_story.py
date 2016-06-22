@@ -1,3 +1,36 @@
+import theater_acts as theater
+
+from story import Story, StoryNode
+from collections import namedtuple
+
+def movie_story_factory():
+    """Create and return the movie story
+    """
+    # TODO: callables broken
+    start = StoryNode('start', theater.theaterActivity)
+    box_office = StoryNode('box office', theater.boxOfficeActivity)
+    concessions = StoryNode('concessions', theater.concessionsActivity)
+    ticket_checker = StoryNode('ticket checker', theater.ticketCheckerActivity)
+    movie = StoryNode('movie', theater.movieActivity)
+
+    dependencies = {ticket_checker: {box_office: None}}
+
+    movie_story = Story(start, dependencies=dependencies)
+    dir_edges = [(start, box_office),
+                 (start, concessions),
+                 (box_office, ticket_checker),
+                 (concessions, ticket_checker),
+                 (ticket_checker, movie)]
+    undir_edges = [(box_office, concessions)]
+    movie_story.add_edges_from(dir_edges)
+    movie_story.add_undirected_edges_from(undir_edges)
+
+    return movie_story
+
+if __name__ == '__main__':
+    movie_story_factory()
+
+'''
 from story import Story
 from story_node import StoryNode
 from player import Player
@@ -28,7 +61,7 @@ ticket_checker.addPrereq("ticket")
 movies = ["Inside Out", "Tomorrowland", "Minions", "Home"]
 menu = ["soda", "popcorn", "candy", "finished"]
 
-#create activities and add them to their corresponding nodes  
+#create activities and add them to their corresponding nodes
 theater.setActivity(Activity(theaterActivity))
 box_office.setActivity(Activity(boxOfficeActivity, movies))
 concessions.setActivity(Activity(concessionsActivity, menu))
@@ -37,3 +70,4 @@ movie.setActivity(Activity(movieActivity))
 
 
 movie_story_line = [theater, concessions, box_office, ticket_checker, movie]
+'''
