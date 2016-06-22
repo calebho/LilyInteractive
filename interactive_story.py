@@ -48,40 +48,40 @@ def getStory():
         return story_dict[story]
 
 def get_target(s, targets, targets_syn):        #this method looks for a one word target in user's speech
-	#check if user says exactly the node's name
-	if "quit" in s.lower().split():
-		return "quit"
-	for t in targets:
-		if s.lower() == t.lower():
-			return t
-	
-	s = s.lower().split()
-	temp = []
-	for i in s:
-		temp.append(stemmer.stem(i))
-	s = temp
-	for t in targets_syn:
-		for word in s:
-			if word == t:
-				return targets[targets_syn.index(t)]
-		
-	return None
+    #check if user says exactly the node's name
+    if "quit" in s.lower().split():
+        return "quit"
+    for t in targets:
+        if s.lower() == t.lower():
+            return t
 
-   
+    s = s.lower().split()
+    temp = []
+    for i in s:
+        temp.append(stemmer.stem(i))
+    s = temp
+    for t in targets_syn:
+        for word in s:
+            if word == t:
+                return targets[targets_syn.index(t)]
+
+    return None
+
+
 def runStory():
-        #play avatar
-	t = threading.Thread(target = avatar_player.run_avatar)
-	t.daemon = True
-	t.start()
-	time.sleep(2)
-	#create story from nodes and player 
-	story_line = getStory()
-	if story_line == None:
-            return
-	player = Player(story_line)
-	story = Story(player, story_line) 
-	#run through the story
-	story.walk(player)
+    #play avatar
+    t = threading.Thread(target = avatar_player.run_avatar)
+    t.daemon = True
+    t.start()
+    time.sleep(2)
+    #create story from nodes and player
+    story_line = getStory()
+    if story_line == None:
+        return
+    player = Player(story_line)
+    story = Story(player, story_line)
+    #run through the story
+    story.walk(player)
 
 
 runStory()
