@@ -41,7 +41,33 @@ def box_office(movie_names):
 
     return movie_choice
 
-def concessionsActivity(player, menu):
+def concessions(menu):
+    """Getting snacks
+
+    Parameters:
+    menu {list} A list of strings representing the available snacks
+
+    Returns: {list} The snacks bought
+    """
+    bought = []
+
+    done = False
+    speak("What can I get for you?") # what if user says nothing?
+    speak("We have")
+    for item in menu:
+        speak(item)
+    while not done:
+        item_choice = getInputString() # TODO: handle multiple inputs?
+        # TODO: validate item choice; break statement
+        bought.append(item_choice)
+        speak("Can I get anything else for you?")
+    speak("Thank you.")
+    speak("If you do not have your ticket yet, go to the box office")
+    speak("Otherwise you can go to the ticket checker.")
+    speak("Next please!")
+
+    return bought
+    '''
     done = False
     speak("What can I get for you?")
     while not done:
@@ -65,6 +91,7 @@ def concessionsActivity(player, menu):
     speak("Otherwise you can go to the ticket checker.")
 
     return None
+    '''
 
 def ticketCheckerActivity(player):
     speak("Hello, ticket please.")

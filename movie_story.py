@@ -8,7 +8,7 @@ def movie_story_factory():
     # TODO: callables broken
     start = StoryNode('start', actions.movie_greeting)
     box_office = StoryNode('box office', actions.box_office)
-    concessions = StoryNode('concessions', theater.concessionsActivity)
+    concessions = StoryNode('concessions', actions.concessions)
     ticket_checker = StoryNode('ticket checker', theater.ticketCheckerActivity)
     movie = StoryNode('movie', theater.movieActivity)
 
