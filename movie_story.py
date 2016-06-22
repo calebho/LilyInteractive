@@ -1,7 +1,6 @@
 import movie_actions as actions
 
 from story import Story, StoryNode
-from collections import namedtuple
 
 def movie_story_factory():
     """Create and return the movie story
