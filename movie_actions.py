@@ -1,6 +1,6 @@
 from player import Player
-from speech_recog import *
-from text_to_speech import *
+from speech_recog import getInputString, getInputStringMultiple
+from text_to_speech import speak
 import webbrowser
 import win32com.client
 import time
@@ -11,30 +11,35 @@ stemmer = SnowballStemmer('english')
 #activities must return None or the name of the next node or "quit"
 
 def movie_greeting(name):
+    """The greeting to the movie theater
+
+    Parameters:
+    name {str} The name of the user
+    """
     speak("Hello! Welcome to the Lehigh Valley Movie Theater")
     speak("You can go to the box office and get your ticket")
     speak("Or you can go to the concessions for some snacks.")
     speak("Where would you like to go, " + name + "?")
 
-def boxOfficeActivity(player, box_args):
+def box_office(movie_names):
+    """Movie selection
+
+    Parameters:
+    movie_names {list} A list of strings containing the available movies
+
+    Returns: {str} The name of the chosen movie
+    """
     speak("Welcome to the box office")
     speak("Which movie would you like to watch?")
-    for i in range(len(box_args[0])):
-       speak(str(box_args[0][i]))
-    movieChoice = getInputString()
-    movie_index = inList(box_args[0], movieChoice)
-    while  movie_index == -1:
-        speak("Sorry, we don't have that movie. Pick another.")
-        for i in range(len(box_args[0])):
-            speak(str(box_args[0][i]))
-        movieChoice = getInputString()
-        movie_index = inList(box_args[0], movieChoice)
-    player.completed["ticket"] = box_args[0][movie_index]
+    for movie_name in movie_names:
+        speak(movie_name)
+    movie_choice = getInputString()
+    # TODO: validate movie choice
     speak("Here's your ticket. Enjoy the show.")
     speak("Would you like to go to the concessions?")
     speak("Or would you like to go to the ticket checker?")
 
-    return None
+    return movie_choice
 
 def concessionsActivity(player, menu):
     done = False
