@@ -1,15 +1,24 @@
 import speech_recognition as sr
-from text_to_speech import *
+from text_to_speech import speak
 
-r = sr.Recognizer()
-r.pause_threshold = 1
+
+def init_recognizer():
+    """Creates and returns a speech recognizer
+    """
+    r = sr.Recognizer()
+    r.pause_threshold = 1
+    r.energy_threshold = 2200
+
+    return r
 
 def getInputString():
+    """
+    """
+    r = init_recognizer()
     s = None
     while not s:
         # use the default microphone as the audio source
         with sr.Microphone() as source:
-            r.energy_threshold = 2200
             audio = r.adjust_for_ambient_noise(source, duration = 0.5)
             print "listening..."
             # listen for the first phrase and extract it into audio dataprint "heard"
@@ -30,7 +39,6 @@ def getInputStringMultiple():
     while not s:
         # use the default microphone as the audio source
         with sr.Microphone() as source:
-                        r.energy_threshold = 2200
             audio = r.adjust_for_ambient_noise(source, duration = 0.5)
             print "listening..."
             # listen for the first phrase and extract it into audio dataprint "heard"
