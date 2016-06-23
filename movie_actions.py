@@ -130,8 +130,6 @@ def watch_movie(movie_name):
         webbrowser.open("https://www.youtube.com/watch?v=MyqZf8LiWvM", new=1)
         fullscreen(150)
 
-    return "quit"
-
 #checks if user says a target phrase in a longer sentence (phrase can be multiple words)
 def inList(lst, s):
     for x in lst:                   #if you say exactly phrase in list
