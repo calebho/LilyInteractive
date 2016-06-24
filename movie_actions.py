@@ -1,10 +1,11 @@
-from player import Player
-from speech_recog import getInputString, getInputStringMultiple
-from text_to_speech import speak
 import webbrowser
 import win32com.client
 import time
+import nltk
+
 from nltk.stem.snowball import SnowballStemmer
+from speech_recog import getInputString, getInputStringMultiple
+from text_to_speech import speak
 
 stemmer = SnowballStemmer('english')
 
@@ -34,6 +35,7 @@ def box_office(movie_names):
     for movie_name in movie_names:
         speak(movie_name)
     movie_choice = getInputString()
+    movie_choice = nltk.word_tokenize(movie_choice)
     # TODO: validate movie choice
     speak("Here's your ticket. Enjoy the show.")
     speak("Would you like to go to the concessions?")
@@ -113,6 +115,7 @@ def watch_movie(movie_name):
     """
     speak("Please power off your cellular devices.")
     speak("Sit back, relax and enjoy the show.")
+    # TODO: platform specific code
     win32com.client.Dispatch("WScript.Shell").SendKeys('{ESC}')
     if movie_name == "inside out":
         webbrowser.open("https://www.youtube.com/watch?v=_MC3XuMvsDI", new=1)
