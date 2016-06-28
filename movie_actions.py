@@ -1,15 +1,9 @@
 import webbrowser
 import win32com.client
 import time
-import nltk
 
-from nltk.stem.snowball import SnowballStemmer
 from speech_recog import getInputString, getInputStringMultiple
 from text_to_speech import speak
-
-stemmer = SnowballStemmer('english')
-
-#activities must return None or the name of the next node or "quit"
 
 def movie_greeting(name):
     """The greeting to the movie theater
