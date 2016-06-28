@@ -35,7 +35,6 @@ def box_office(movie_names):
     for movie_name in movie_names:
         speak(movie_name)
     movie_choice = getInputString()
-    movie_choice = nltk.word_tokenize(movie_choice)
     # TODO: validate movie choice
     speak("Here's your ticket. Enjoy the show.")
     speak("Would you like to go to the concessions?")
@@ -132,30 +131,6 @@ def watch_movie(movie_name):
     if movie_name == "home":
         webbrowser.open("https://www.youtube.com/watch?v=MyqZf8LiWvM", new=1)
         fullscreen(150)
-
-#checks if user says a target phrase in a longer sentence (phrase can be multiple words)
-def inList(lst, s):
-    for x in lst:                   #if you say exactly phrase in list
-        if s.lower() == x.lower():
-            return lst.index(x)
-    if "quit" in s.lower().split():
-        return None
-    s = s.lower().split()           #check if you said phrase inside a longer sentence
-    temp = []
-    for i in s:                     #get root word of user input
-        temp.append(stemmer.stem(i))
-    s = temp
-    for l in lst:                   #for every element in the (movie, food)
-        count = 0
-        words = l.lower().split()
-        for w in words:             #for every word in l(movie title, food name)
-            w = stemmer.stem(w)     #compare root words, to increase generaltiy
-            if w in s:              #if that word is in what you said
-                count += 1
-        if count == len(words):      #if you said every word in l
-            return lst.index(l)
-    return -1
-
 
 def fullscreen(length):
     time.sleep(10)
