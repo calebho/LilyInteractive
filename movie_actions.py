@@ -6,6 +6,17 @@ from parsers import parse_choices
 from speech_recog import getInputString, getInputStringMultiple
 from text_to_speech import speak
 
+# TODO: NAIVE!!!
+def get_choices(s, valid_choices):
+    """
+    """
+    to_ret = []
+    for choice in valid_choices:
+        if choice.lower() in s.lower():
+            to_ret.append(choice)
+
+    return to_ret
+
 def movie_greeting(name):
     """The greeting to the movie theater
 
@@ -29,18 +40,25 @@ def box_office(movie_names):
     speak("Which movie would you like to watch?")
     for movie_name in movie_names:
         speak(movie_name)
-    movie_choice = getInputString()
-    while True:
-        try:
-            choices = parse_choices(movie_choice, "I'd like to watch Minions")
-        except RuntimeError:
-            speak("I'm sorry, I didn't understand that")
-        if len(choices) == 1:
-            speak("Please pick one movie to watch")
-        elif choices[0].lower() in movie_names:
-            break
-        else:
-            speak("Sorry we don't have tickets for %s" % choices[0])
+    inp = getInputString()
+    movie_choice = get_choices(inp, movie_names)
+    while len(movie_choice) != 1:
+        if not movie_choice:
+            speak("Sorry we don't have tickets for that movie")
+        elif len(movie_choice) > 1:
+            speak("Please choose only one movie")
+        movie_choice = get_choices(inp, movie_names)
+    # while True:
+    #     try:
+    #         choices = parse_choices(movie_choice, "I'd like to watch Minions")
+    #     except RuntimeError:
+    #         speak("I'm sorry, I didn't understand that")
+    #     if len(choices) == 1:
+    #         speak("Please pick one movie to watch")
+    #     elif choices[0].lower() in movie_names:
+    #         break
+    #     else:
+    #         speak("Sorry we don't have tickets for %s" % choices[0])
     speak("Here's your ticket. Enjoy the show.")
     speak("Would you like to go to the concessions?")
     speak("Or would you like to go to the ticket checker?")
@@ -56,16 +74,18 @@ def concessions(menu):
     Returns: {list} The snacks bought
     """
     bought = []
-    done = False
-
     speak("What can I get for you?") # what if user says nothing?
     speak("We have")
     for item in menu:
         speak(item)
-    while not done:
-        item_choice = getInputString() # TODO: handle multiple inputs?
-        # TODO: validate item choice; break statement
-        bought.append(item_choice)
+    while True:
+        inp = getInputString() # TODO: handle multiple inputs?
+        if "no" in inp.lower():
+            break
+        item_choices = get_choices(inp, menu)
+        for item in item_choices:
+            if item not in bought:
+                bought.append(item)
         speak("Can I get anything else for you?")
     speak("Thank you.")
     speak("If you do not have your ticket yet, go to the box office")
@@ -73,31 +93,6 @@ def concessions(menu):
     speak("Next please!")
 
     return bought
-    '''
-    done = False
-    speak("What can I get for you?")
-    while not done:
-        for i in range(len(menu[0])):
-            if not menu[0][i].lower() in player.completed.keys():
-                speak(str(menu[0][i]))
-        menuChoice = getInputString()
-        menu_index = inList(menu[0], menuChoice)
-        while menu_index == -1:
-            speak("Sorry, we don't have that. Pick another.")
-            menuChoice = getInputString()
-            menu_index = inList(menu[0], menuChoice)
-        if "finished" in menuChoice.lower().split():
-            done = True
-        else:
-            player.completed[menu[0][menu_index]] = True
-            speak("Can I get anything else for you?")
-    speak("Thank you. Next please!")
-
-    speak("If you do not have your ticket yet, go to the box office")
-    speak("Otherwise you can go to the ticket checker.")
-
-    return None
-    '''
 
 def ticket_checker(movie_name):
     """Checks the user's ticket and gives directions to the corresponding
