@@ -33,6 +33,17 @@ def parse_choices(s, example):
         raise RuntimeError("The sentences\n%s\n%s\naren't similiar enough" % \
             (user_sent, ex_sent))
 
+    choices = []
+    for ent in user_sent:
+        if len(ent) == 1: # just a noun
+            choices.append(ent.text)
+        else: # get the base noun
+            noun_phrase = NLP(ent.text)
+            chunk = noun_phrase.noun_chunks
+            assert len(chunk) == 1
+            choices.append(chunk.text)
+
+    return choices 
 
 def main():
     test_sents = [u'I want popcorn and soda',
