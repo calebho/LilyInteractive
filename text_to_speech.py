@@ -1,3 +1,31 @@
+import json
+import pyaudio
+import wave
+
+from StringIO import StringIO
+from watson_developer_cloud import TextToSpeechV1
+
+# define enter/exit methods for use in a context manager
+StringIO.__enter__ = lambda self: self
+StringIO.__exit__ = lambda self, e_type, e_val, tb: self.close()
+
+tts = TextToSpeechV1(username='68819f91-e8a5-49e3-b284-3b66ed470bb9',
+                     password='1tkAyaLoSdhm')
+
+def speak(s):
+    """Do TTS on a string `s`
+    """
+    audio = tts.synthesize(s, accept='audio/wav', voice='en-US_AllisonVoice')
+    with StringIO(audio) as f:
+        wf = wave.open(f, 'rb')
+        # p = pyaudio.PyAudio()
+
+def main():
+    speak('This is some test text')
+
+if __name__ == '__main__':
+    main()
+
 
 """
 import pyttsx
