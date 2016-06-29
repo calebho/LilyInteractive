@@ -2,6 +2,7 @@ import webbrowser
 import win32com.client
 import time
 
+from parsers import parse_choices
 from speech_recog import getInputString, getInputStringMultiple
 from text_to_speech import speak
 
@@ -29,7 +30,17 @@ def box_office(movie_names):
     for movie_name in movie_names:
         speak(movie_name)
     movie_choice = getInputString()
-    # TODO: validate movie choice
+    while True:
+        try:
+            choices = parse_choices(movie_choice, "I'd like to watch Minions")
+        except RuntimeError:
+            speak("I'm sorry, I didn't understand that")
+        if len(choices) == 1:
+            speak("Please pick one movie to watch")
+        elif choices[0].lower() in movie_names:
+            break
+        else:
+            speak("Sorry we don't have tickets for %s" % choices[0])
     speak("Here's your ticket. Enjoy the show.")
     speak("Would you like to go to the concessions?")
     speak("Or would you like to go to the ticket checker?")
@@ -45,8 +56,8 @@ def concessions(menu):
     Returns: {list} The snacks bought
     """
     bought = []
-
     done = False
+
     speak("What can I get for you?") # what if user says nothing?
     speak("We have")
     for item in menu:
