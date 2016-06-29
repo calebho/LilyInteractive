@@ -2,19 +2,13 @@ import speech_recognition as sr
 from text_to_speech import speak
 
 
-def init_recognizer():
-    """Creates and returns a speech recognizer
-    """
-    r = sr.Recognizer()
-    r.pause_threshold = 1
-    r.energy_threshold = 2200
-
-    return r
+r = sr.Recognizer()
+r.pause_threshold = 1
+r.energy_threshold = 2200
 
 def getInputString():
     """
     """
-    r = init_recognizer()
     s = None
     while not s:
         # use the default microphone as the audio source
