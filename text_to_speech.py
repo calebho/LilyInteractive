@@ -1,4 +1,3 @@
-import json
 import pyaudio
 import wave
 import time
