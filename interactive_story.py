@@ -1,3 +1,30 @@
+from movie_story import movie_story_factory
+from story import StoryError
+
+def get_story():
+    """Gets a story choice from the user
+    """
+    pass
+
+def main():
+    s = movie_story_factory()
+    node_dict = s.get_nodes_by_name()
+    while not s.is_finished():
+        print 'current:', s.current
+        next_node = raw_input('Next node? ')
+        if next_node.strip() in node_dict:
+            try:
+                s.current = node_dict[next_node]
+            except StoryError as e:
+                print str(e)
+        else:
+            print '%s is not a valid node' % next_node
+
+
+main()
+
+
+"""
 from story import Story
 from story_node import StoryNode
 from player import Player
@@ -85,3 +112,4 @@ def runStory():
 
 
 runStory()
+"""
