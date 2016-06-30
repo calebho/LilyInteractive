@@ -1,6 +1,7 @@
 import json
 import pyaudio
 import wave
+import time
 
 from StringIO import StringIO
 from watson_developer_cloud import TextToSpeechV1
@@ -11,14 +12,36 @@ StringIO.__exit__ = lambda self, e_type, e_val, tb: self.close()
 
 tts = TextToSpeechV1(username='68819f91-e8a5-49e3-b284-3b66ed470bb9',
                      password='1tkAyaLoSdhm')
+wf = None # the wave file
+
+def callback(in_data, frame_count, time_info, status):
+    """pyaudio callback
+    """
+    data = wf.readframes(frame_count)
+    return data, pyaudio.paContinue
 
 def speak(s):
     """Do TTS on a string `s`
     """
+    global wf
+
     audio = tts.synthesize(s, accept='audio/wav', voice='en-US_AllisonVoice')
     with StringIO(audio) as f:
         wf = wave.open(f, 'rb')
-        # p = pyaudio.PyAudio()
+        p = pyaudio.PyAudio()
+        stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
+                        channels=wf.getnchannels(),
+                        rate=wf.getframerate(),
+                        output=True,
+                        stream_callback=callback)
+
+        stream.start_stream()
+        while stream.is_active():
+            time.sleep(0.1)
+        stream.stop_stream()
+        stream.close()
+        p.terminate()
+
 
 def main():
     speak('This is some test text')
