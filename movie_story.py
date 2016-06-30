@@ -5,7 +5,6 @@ from story import Story, StoryNode
 def movie_story_factory():
     """Create and return the movie story
     """
-    # TODO: callables broken
     start = StoryNode('start', actions.movie_greeting)
     box_office = StoryNode('box office', actions.box_office)
     concessions = StoryNode('concessions', actions.concessions)
