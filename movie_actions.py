@@ -1,5 +1,5 @@
 import webbrowser
-import win32com.client
+# import win32com.client
 import time
 
 from parsers import parse_choices
@@ -23,10 +23,13 @@ def movie_greeting(name):
     Parameters:
     name {str} The name of the user
     """
-    speak("Hello! Welcome to the Lehigh Valley Movie Theater")
-    speak("You can go to the box office and get your ticket")
-    speak("Or you can go to the concessions for some snacks.")
-    speak("Where would you like to go, " + name + "?")
+    text = u"<speak><express-as type=\"GoodNews\">"
+    text += u"Hello! Welcome to the Lehigh Valley Movie Theater. "
+    text += u"You can go to the box office and get your ticket "
+    text += u"or you can go to the concessions for some snacks. "
+    text += u"Where would you like to go %s?" % name
+    text += u"</express-as></speak>"
+    speak(text)
 
 def box_office(movie_names):
     """Movie selection
@@ -138,3 +141,9 @@ def fullscreen(length):
     time.sleep(length)
     win32com.client.Dispatch("WScript.Shell").SendKeys('f')
     win32com.client.Dispatch("WScript.Shell").SendKeys('%{F4}',0)
+
+def main():
+    movie_greeting('Caleb')
+
+if __name__ == '__main__':
+    main()
