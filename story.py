@@ -1,6 +1,6 @@
 import networkx as nx
 
-from copy import copy, deepcopy
+from copy import copy
 
 def get_keys(d):
     """Recursively get the keys of a nested dictionary and return them as a set
@@ -90,11 +90,11 @@ class Story(nx.DiGraph):
 
     @property
     def dependencies(self):
-        return deepcopy(self._dependencies)
+        return copy(self._dependencies)
 
     @property
     def visited(self):
-        return deepcopy(self._visited)
+        return copy(self._visited)
 
     @current.setter
     def current(self, node):
