@@ -17,18 +17,27 @@ def get_choices(s, valid_choices):
 
     return to_ret
 
+def wrap_text(s, t=None):
+    """Wrap a string `s` with speak and express-as tags using type `t`
+    """
+    if t:
+        return u"<speak><express-as type=\"%s\">" % t + \
+               unicode(s) + \
+               u"</express-as></speak>"
+   else:
+       return u"<speak>" + unicode(s) + u"</speak>"
+
 def movie_greeting(name):
     """The greeting to the movie theater
 
     Parameters:
     name {str} The name of the user
     """
-    text = u"<speak><express-as type=\"GoodNews\">"
-    text += u"Hello! Welcome to the Lehigh Valley Movie Theater. "
-    text += u"You can go to the box office and get your ticket "
-    text += u"or you can go to the concessions for some snacks. "
-    text += u"Where would you like to go %s?" % name
-    text += u"</express-as></speak>"
+    text = "Hello! Welcome to the Lehigh Valley Movie Theater. "
+    text += "You can go to the box office and get your ticket "
+    text += "or you can go to the concessions for some snacks. "
+    text += "Where would you like to go %s?" % name
+    text = wrap_text(text, "GoodNews")
     speak(text)
 
 def box_office(movie_names):
@@ -39,17 +48,21 @@ def box_office(movie_names):
 
     Returns: {str} The name of the chosen movie
     """
-    speak("Welcome to the box office")
-    speak("Which movie would you like to watch?")
+    text = "Welcome to the box office. Which movie would you like to watch?"
+    text = wrap_text(text, "GoodNews")
+    speak(text)
+
     for movie_name in movie_names:
+        movie_name = wrap_text(movie_name)
         speak(movie_name)
     inp = getInputString()
     movie_choice = get_choices(inp, movie_names)
     while len(movie_choice) != 1:
         if not movie_choice:
-            speak("Sorry we don't have tickets for that movie")
+            speak(wrap_text("Sorry we don't have tickets for that movie.",
+                            "Apology"))
         elif len(movie_choice) > 1:
-            speak("Please choose only one movie")
+            speak(wrap_text("Please choose only one movie"))
         movie_choice = get_choices(inp, movie_names)
     # while True:
     #     try:
@@ -62,9 +75,11 @@ def box_office(movie_names):
     #         break
     #     else:
     #         speak("Sorry we don't have tickets for %s" % choices[0])
-    speak("Here's your ticket. Enjoy the show.")
-    speak("Would you like to go to the concessions?")
-    speak("Or would you like to go to the ticket checker?")
+
+    text = "Here's your ticket. Enjoy the show. "
+    text += "Would you like to go to the concessions or the ticket checker?"
+    text = wrap_text(text, "GoodNews")
+    speak(text)
 
     return movie_choice
 
@@ -77,10 +92,19 @@ def concessions(menu):
     Returns: {list} The snacks bought
     """
     bought = []
-    speak("What can I get for you?") # what if user says nothing?
-    speak("We have")
-    for item in menu:
-        speak(item)
+    text = "What can I get for you? We have " # what if user says nothing?
+    if len(menu) > 2:
+        menu_copy = menu[:]
+        menu[-1] = 'and ' + menu[-1]
+        menu_str = ', '.join(menu_copy)
+    elif len(menu) == 2:
+        menu_str = ' and '.join(menu)
+    else:
+        menu_str = menu[0]
+    text += menu_str
+    text = wrap_text(text, "GoodNews")
+    speak(text)
+
     while True:
         inp = getInputString() # TODO: handle multiple inputs?
         if "no" in inp.lower():
@@ -89,11 +113,13 @@ def concessions(menu):
         for item in item_choices:
             if item not in bought:
                 bought.append(item)
-        speak("Can I get anything else for you?")
-    speak("Thank you.")
-    speak("If you do not have your ticket yet, go to the box office")
-    speak("Otherwise you can go to the ticket checker.")
-    speak("Next please!")
+        speak(wrap_text("Can I get anything else for you?", "GoodNews"))
+
+    text = "Thank you. "
+    text += "If you do not have your ticket yet, go to the box office."
+    text += "Otherwise, you can go to the ticket checker."
+    text = wrap_text(text, "GoodNews")
+    speak(text)
 
     return bought
 
@@ -101,22 +127,25 @@ def ticket_checker(movie_name):
     """Checks the user's ticket and gives directions to the corresponding
     theater
     """
-    speak("Hello, ticket please.")
+    text = "Hello, ticket please! "
     if movie_name == "inside out":
-        speak("Inside Out is in theater 3 A, enjoy the show!")
+        text += "Inside Out is in theater 3 A, enjoy the show! "
     if movie_name == "tomorrowland":
-        speak("Tomorrowland is in theater 1 D, enjoy your movie!")
+        text += "Tomorrowland is in theater 1 D, enjoy your movie! "
     if movie_name == "minions":
-        speak("Minions is in theater 3 B, enjoy the show!")
+        text += "Minions is in theater 3 B, enjoy the show! "
     if movie_name == "home":
-        speak("Home is in theater 1 A, enjoy your movie!")
-    speak("Say movie to sit down and watch.")
+        text += "Home is in theater 1 A, enjoy your movie! "
+    text = wrap_text(text, "GoodNews")
+    speak(text)
 
 def watch_movie(movie_name):
     """Plays the movie
     """
-    speak("Please power off your cellular devices.")
-    speak("Sit back, relax and enjoy the show.")
+    text = "Please power off your cellular devices. "
+    text += "Sit back, relax, and enjoy the show."
+    text = wrap_text(text, "GoodNews")
+    speak(text)
     # TODO: platform specific code
     win32com.client.Dispatch("WScript.Shell").SendKeys('{ESC}')
     if movie_name == "inside out":
