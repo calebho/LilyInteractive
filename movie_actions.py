@@ -2,7 +2,7 @@ import webbrowser
 # import win32com.client
 import time
 
-from parsers import parse_choices
+# from parsers import parse_choices
 from speech_recog import getInputString, getInputStringMultiple
 from text_to_speech import speak
 
