@@ -1,13 +1,35 @@
 from movie_story import movie_story_factory
 from story import StoryError
 
+# movie story elements
+MOVIE_LIST = ["inside out", "tomorrowland", "minions", "home"]
+MENU = ["soda", "popcorn", "candy"]
+
+def get_name():
+    """Gets the user's name
+    """
+    return raw_input("What's your name? ")
+
 def get_story():
     """Gets a story choice from the user
     """
-    pass
+    return 'movie'
 
 def main():
-    s = movie_story_factory()
+    story_choice = get_story()
+    if story_choice == 'movie':
+        s = movie_story_factory()
+        player = {'name': get_name(),
+                  'movie names': MOVIE_LIST,
+                  'menu': MENU,
+                  'bought': None,
+                  'movie choice': None}
+    elif story_choice == 'zoo':
+        pass
+    elif story_choice == 'pet store':
+        pass
+
+    s.current(player)
     node_dict = s.get_nodes_by_name()
     while not s.is_finished():
         print 'current:', s.current
@@ -15,6 +37,7 @@ def main():
         if next_node.strip() in node_dict:
             try:
                 s.current = node_dict[next_node]
+                s.current(player)
             except StoryError as e:
                 print str(e)
         else:

@@ -24,35 +24,33 @@ def wrap_text(s, t=None):
         return u"<speak><express-as type=\"%s\">" % t + \
                unicode(s) + \
                u"</express-as></speak>"
-   else:
+    else:
        return u"<speak>" + unicode(s) + u"</speak>"
 
-def movie_greeting(name):
+def movie_greeting(p):
     """The greeting to the movie theater
 
     Parameters:
-    name {str} The name of the user
+    p {dict} The player dict
     """
     text = "Hello! Welcome to the Lehigh Valley Movie Theater. "
     text += "You can go to the box office and get your ticket "
     text += "or you can go to the concessions for some snacks. "
-    text += "Where would you like to go %s?" % name
+    text += "Where would you like to go %s?" % p['name']
     text = wrap_text(text, "GoodNews")
     speak(text)
 
-def box_office(movie_names):
-    """Movie selection
+def box_office(p):
+    """Movie selection. Adds the key `movie choice` to `p`
 
     Parameters:
-    movie_names {list} A list of strings containing the available movies
-
-    Returns: {str} The name of the chosen movie
+    p {dict} The player dict
     """
     text = "Welcome to the box office. Which movie would you like to watch?"
     text = wrap_text(text, "GoodNews")
     speak(text)
 
-    for movie_name in movie_names:
+    for movie_name in p['movie names']:
         movie_name = wrap_text(movie_name)
         speak(movie_name)
     inp = getInputString()
@@ -81,16 +79,14 @@ def box_office(movie_names):
     text = wrap_text(text, "GoodNews")
     speak(text)
 
-    return movie_choice
+    p['movie choice'] = movie_choice
 
-def concessions(menu):
-    """Getting snacks
+def concessions(p):
+    """Getting snacks. Adds the key `bought` to `p`
 
     Parameters:
-    menu {list} A list of strings representing the available snacks
-
-    Returns: {list} The snacks bought
     """
+    menu = p['menu']
     bought = []
     text = "What can I get for you? We have " # what if user says nothing?
     if len(menu) > 2:
@@ -121,12 +117,13 @@ def concessions(menu):
     text = wrap_text(text, "GoodNews")
     speak(text)
 
-    return bought
+    p['bought'] = bought
 
-def ticket_checker(movie_name):
+def ticket_checker(p):
     """Checks the user's ticket and gives directions to the corresponding
     theater
     """
+    movie_name = p['movie choice']
     text = "Hello, ticket please! "
     if movie_name == "inside out":
         text += "Inside Out is in theater 3 A, enjoy the show! "
@@ -139,9 +136,13 @@ def ticket_checker(movie_name):
     text = wrap_text(text, "GoodNews")
     speak(text)
 
-def watch_movie(movie_name):
+def watch_movie(p):
     """Plays the movie
     """
+    # TODO
+    return
+
+    movie_name = p['movie choice']
     text = "Please power off your cellular devices. "
     text += "Sit back, relax, and enjoy the show."
     text = wrap_text(text, "GoodNews")
