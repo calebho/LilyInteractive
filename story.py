@@ -1,6 +1,6 @@
 import networkx as nx
 
-from copy import deepcopy
+from copy import copy, deepcopy
 
 def get_keys(d):
     """Recursively get the keys of a nested dictionary and return them as a set
@@ -119,7 +119,7 @@ class Story(nx.DiGraph):
         Parameters:
         d {dict} A nested dictionary representing the dependency tree
         """
-        d = deepcopy(d) # dictionaries are mutable
+        d = copy(d) # copy the dict, but keep existing references
         nodes = get_keys(d)
         for node in nodes:
             if not super(Story, self).has_node(node):
@@ -163,6 +163,14 @@ class Story(nx.DiGraph):
                 new_e.append(edge[2])
             ebunch_reversed.append(tuple(new_e))
         super(Story, self).add_edges_from(ebunch_reversed, *args, **kwargs)
+
+    def get_nodes_by_name(self):
+        """Returns a dict mapping the names of the nodes to the nodes
+        """
+        try:
+            return {node.name: node for node in super(Story, self).nodes()}
+        except AttributeError:
+            raise StoryError('One or more nodes is not of type StoryNode')
 
     def is_finished(self):
         """Check whether the story is finished (current is a leaf node)
