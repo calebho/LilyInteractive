@@ -1,27 +1,28 @@
 from speech_recog import getInputString
-from text_to_speech import speak
+from text_to_speech import speak, wrap_text, englishify
 import random
 from run_gif import *
 
 yes = ['yes']
 yes_syns = [['yes', 'yup', 'yeah', 'yea', 'indeed', 'sure']]
 
-def entranceAct(player):
-    speak("Hi " + player.name + ". Welcome to the San Diego Zoo!")
-    x = random.random()
-    if x > 0.99:
-        speak("Oh no! You forgot your wallet!")
-        speak("The End.")
-        return "quit"
-    speak("We have a bunch of great exhibits for you today.")
-    speak("Say the name of the animal you want to see to go there.")
-    speak("Say goodbye at any time to leave the zoo.")
-    speak("Have a fun time!")
-    speak("Where should we start?")
-    sayChildren(player)
-    #for x in player.location.children:
-    #    speak(x.name)
-    return None
+def entrance(p):
+    """Greeting node
+    """
+    text = "Hi %s. Welcome to the San Diego Zoo! " % p['name']
+    if random.random() > 0.99:
+        text += "Oh no! You forgot your wallet!"
+        text = wrap_text(text)
+        speak(text)
+        return # TODO: perhaps something different for exit
+
+    text += "We have a bunch of great exhibits for you today. "
+    text += "Say the name of the animal you want to see to go there. "
+    text += "If you want to leave at any time, just say so. "
+    text += "We can go see the " + englishify(p['exhibits'], conj=False) + ". "
+    text += "Where should we start?"
+    text = wrap_text(text, "GoodNews")
+    speak(text)
 
 def parking_lotAct(player):
     speak("You've reached the parking lot.")
