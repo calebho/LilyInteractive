@@ -51,6 +51,20 @@ def wrap_text(s, t=None):
     else:
        return u"<speak>" + unicode(s) + u"</speak>"
 
+def englishify(l, conj=True):
+    """Unpack a list to natural english
+    """
+    if len(l) == 1:
+        return l[0]
+    elif len(l) == 2:
+        return ' and '.join(l) if conj else ' or '.join(l)
+    else:
+        l_copy = l[:]
+        if conj:
+            l_copy[-1] = 'and ' + l_copy[-1]
+        else:
+            l_copy[-1] = 'or ' + l_copy[-1]
+        return ', '.join(l_copy)
 
 def main():
     speak('This is some test text')

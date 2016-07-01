@@ -4,7 +4,7 @@ import time
 
 # from parsers import parse_choices
 from speech_recog import getInputString, getInputStringMultiple
-from text_to_speech import speak, wrap_text
+from text_to_speech import speak, wrap_text, englishify
 
 # TODO: NAIVE!!!
 def get_choices(s, valid_choices):
@@ -38,14 +38,7 @@ def box_office(p):
     """
     text = "Welcome to the box office. Which movie would you like to watch?"
     text += "We have tickets for "
-    if len(p['movie names']) == 1:
-        text += p['movie names'][0]
-    elif len(p['movie names']) == 2:
-        text += ' and '.join(p['movie names'])
-    else:
-        movie_names_copy = p['movie names'][:]
-        movie_names_copy[-1] = 'and ' + movie_names_copy[-1]
-        text += ', '.join(movie_names_copy)
+    text += englishify(p['movie names'])
     text = wrap_text(text, "GoodNews")
     speak(text)
 
@@ -85,15 +78,7 @@ def concessions(p):
     menu = p['menu']
     bought = []
     text = "What can I get for you? We have " # what if user says nothing?
-    if len(menu) > 2:
-        menu_copy = menu[:]
-        menu[-1] = 'and ' + menu[-1]
-        menu_str = ', '.join(menu_copy)
-    elif len(menu) == 2:
-        menu_str = ' and '.join(menu)
-    else:
-        menu_str = menu[0]
-    text += menu_str
+    text += englishify(menu)
     text = wrap_text(text, "GoodNews")
     speak(text)
 
