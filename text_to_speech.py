@@ -41,13 +41,22 @@ def speak(s):
         stream.close()
         p.terminate()
 
+def wrap_text(s, t=None):
+    """Wrap a string `s` with speak and express-as tags using type `t`
+    """
+    if t:
+        return u"<speak><express-as type=\"%s\">" % t + \
+               unicode(s) + \
+               u"</express-as></speak>"
+    else:
+       return u"<speak>" + unicode(s) + u"</speak>"
+
 
 def main():
     speak('This is some test text')
 
 if __name__ == '__main__':
     main()
-
 
 """
 import pyttsx

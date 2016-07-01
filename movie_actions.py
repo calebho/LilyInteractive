@@ -4,7 +4,7 @@ import time
 
 # from parsers import parse_choices
 from speech_recog import getInputString, getInputStringMultiple
-from text_to_speech import speak
+from text_to_speech import speak, wrap_text
 
 # TODO: NAIVE!!!
 def get_choices(s, valid_choices):
@@ -16,16 +16,6 @@ def get_choices(s, valid_choices):
             to_ret.append(choice)
 
     return to_ret
-
-def wrap_text(s, t=None):
-    """Wrap a string `s` with speak and express-as tags using type `t`
-    """
-    if t:
-        return u"<speak><express-as type=\"%s\">" % t + \
-               unicode(s) + \
-               u"</express-as></speak>"
-    else:
-       return u"<speak>" + unicode(s) + u"</speak>"
 
 def movie_greeting(p):
     """The greeting to the movie theater
