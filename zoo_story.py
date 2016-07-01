@@ -1,50 +1,30 @@
-from story import Story
-from story_node import StoryNode
-from player import Player
-from activity import Activity
-from zoo_acts import *
 import random
-from text_to_speech import *
+import zoo_actions as actions
 
-#nodes
-entrance = StoryNode("entrance")
-parking_lot = StoryNode("goodbye")
-monkeys = StoryNode("monkeys")
-elephants = StoryNode("elephants")
-lions = StoryNode("lions")
-tigers = StoryNode("tigers")
-penguins = StoryNode("penguins")
-otters = StoryNode("otters")
-pandas = StoryNode("pandas")
+from story import Story, StoryNode
 
-exhibits = [monkeys, elephants, lions, tigers, penguins, otters, pandas]
-current_exhibits = []
+def zoo_story_factory():
+    entrance = StoryNode("entrance", actions.entrance)
+    parking_lot = StoryNode("parking lot", actions.parking_lot)
+    monkeys = StoryNode("monkeys", actions.monkeys)
+    elephants = StoryNode("elephants", actions.elephants)
+    lions = StoryNode("lions", actions.lions)
+    tigers = StoryNode("tigers", actions.tigers)
+    penguins = StoryNode("penguins", actions.penguins)
+    otters = StoryNode("otters", actions.otters)
+    pandas = StoryNode("pandas", actions.pandas)
 
-#pick one of the exhibits
-for x in range(4):
-    rand_num = random.randint(0, len(exhibits)-1)
-    current_exhibits.append(exhibits[rand_num])
-    exhibits.remove(exhibits[rand_num])
+    exhibits = [monkeys, elephants, lions, tigers, penguins, otters, pandas]
+    exhibits = random.sample(exhibits, 4)
 
+    zoo_story = Story(entrance)
+    dir_edges = [(entrance, exhibit) for exhibit in exhibits]
+    dir_edges += [(exhibit, parking_lot) for exhibit in exhibits]
+    undir_edges = []
+    for i, v in enumerate(exhibits):
+        for w in exhibits[i+1:]:
+            undir_edges.append((v, w))
+    zoo_story.add_edges_from(dir_edges)
+    zoo_story,add_undirected_edges_from(undir_edges)
 
-#add children
-entrance.addChild(current_exhibits[0]).addChild(current_exhibits[1]).addChild(current_exhibits[2]).addChild(current_exhibits[3]).addChild(parking_lot)
-current_exhibits[0].addChild(current_exhibits[1]).addChild(current_exhibits[2]).addChild(current_exhibits[3]).addChild(parking_lot)
-current_exhibits[1].addChild(current_exhibits[0]).addChild(current_exhibits[2]).addChild(current_exhibits[3]).addChild(parking_lot)
-current_exhibits[2].addChild(current_exhibits[0]).addChild(current_exhibits[1]).addChild(current_exhibits[3]).addChild(parking_lot)
-current_exhibits[3].addChild(current_exhibits[0]).addChild(current_exhibits[1]).addChild(current_exhibits[2]).addChild(parking_lot)
-
-
-#set activities
-
-entrance.setActivity(Activity(entranceAct))
-parking_lot.setActivity(Activity(parking_lotAct))
-monkeys.setActivity(Activity(monkeyAct))
-elephants.setActivity(Activity(elephantAct))
-lions.setActivity(Activity(lionAct))
-tigers.setActivity(Activity(tigerAct))
-penguins.setActivity(Activity(penguinAct))
-otters.setActivity(Activity(otterAct))
-pandas.setActivity(Activity(pandaAct))
-
-zoo_story_line = [entrance, monkeys, elephants, lions, tigers, penguins, otters, pandas, parking_lot]
+    return zoo_story
