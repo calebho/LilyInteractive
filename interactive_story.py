@@ -5,18 +5,20 @@ from story import StoryError
 MOVIE_LIST = ["inside out", "tomorrowland", "minions", "home"]
 MENU = ["soda", "popcorn", "candy"]
 
+# zoo story elements
+EXHIBITS = ["monkeys", "elephants", "lions", "otters", "pandas", "tigers",
+            "penguins"]
+
 def get_name():
     """Gets the user's name
     """
     return raw_input("What's your name? ")
 
 def get_story():
-    """Gets a story choice from the user
+    """Gets a story choice from the user and returns the appropriate Story object
+    and player dict
     """
-    return 'movie'
-
-def main():
-    story_choice = get_story()
+    story_choice = 'movie'
     if story_choice == 'movie':
         s = movie_story_factory()
         player = {'name': get_name(),
@@ -25,9 +27,17 @@ def main():
                   'bought': None,
                   'movie choice': None}
     elif story_choice == 'zoo':
-        pass
+        s = zoo_story_factory()
+        player = {'name': get_name(),
+                  'exhibits': EXHIBITS,
+                  'next': None}
     elif story_choice == 'pet store':
         pass
+
+    return s, player
+
+def main():
+    s, player = get_story()
 
     s.current(player)
     node_dict = s.get_nodes_by_name()
