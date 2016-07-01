@@ -47,14 +47,20 @@ def box_office(p):
     p {dict} The player dict
     """
     text = "Welcome to the box office. Which movie would you like to watch?"
+    text += "We have tickets for "
+    if len(p['movie names']) == 1:
+        text += p['movie names'][0]
+    elif len(p['movie names']) == 2:
+        text += ' and '.join(p['movie names'])
+    else:
+        movie_names_copy = p['movie names'][:]
+        movie_names_copy[-1] = 'and ' + movie_names_copy[-1]
+        text += ', '.join(movie_names_copy)
     text = wrap_text(text, "GoodNews")
     speak(text)
 
-    for movie_name in p['movie names']:
-        movie_name = wrap_text(movie_name)
-        speak(movie_name)
     inp = getInputString()
-    movie_choice = get_choices(inp, movie_names)
+    movie_choice = get_choices(inp, p['movie names'])
     while len(movie_choice) != 1:
         if not movie_choice:
             speak(wrap_text("Sorry we don't have tickets for that movie.",
@@ -79,7 +85,7 @@ def box_office(p):
     text = wrap_text(text, "GoodNews")
     speak(text)
 
-    p['movie choice'] = movie_choice
+    p['movie choice'] = movie_choice[0]
 
 def concessions(p):
     """Getting snacks. Adds the key `bought` to `p`
