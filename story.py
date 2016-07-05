@@ -1,4 +1,5 @@
 import networkx as nx
+import random
 
 from copy import copy
 
@@ -66,13 +67,17 @@ class Story(nx.DiGraph):
     """The Story class represented as a directed graph
     """
 
-    def __init__(self, start, dependencies={}):
+    def __init__(self, start, dependencies={}, random_events={}):
         """Constructor for Story
 
         Parameters:
-        start {StoryNode} The starting point of the story
+        start {hashable} The starting point of the story
         dependencies {dict} A tree describing StoryNode dependencies. Leaf nodes
                             should have value None
+        random_events {dict} A dict of `node: list` describing random events
+                             that can occur at the specified nodes. The list
+                             contains tuples of the form (n, p) where `n` is the
+                             "random event" node occuring with probability `p`.
         """
         # TODO: player field?
         super(Story, self).__init__()
@@ -80,6 +85,8 @@ class Story(nx.DiGraph):
         self._visited = set([start])
         self._dependencies = None
         self.dependencies = dependencies
+        self._random_events = None
+        self.random_events = random_events
 
         super(Story, self).add_node(start)
 
@@ -93,21 +100,28 @@ class Story(nx.DiGraph):
         return copy(self._dependencies)
 
     @property
+    def random_events(self):
+        return copy(self._random_events)
+
+    @property
     def visited(self):
         return copy(self._visited)
 
     @current.setter
     def current(self, node):
         if node in self.neighbors(self._current):
-            unmet_deps = self._check_deps(node)
-            if unmet_deps:
-                s = "[%s] has unmet dependencies: " % str(node)
-                for dep in unmet_deps:
-                    s += "[%s] " % str(dep)
-                raise StoryError(s)
+            if self._check_random(node):
+                pass # current will be set in check_random
             else:
-                self._current = node
-                self._visited.add(node)
+                unmet_deps = self._check_deps(node)
+                if unmet_deps:
+                    s = "[%s] has unmet dependencies: " % str(node)
+                    for dep in unmet_deps:
+                        s += "[%s] " % str(dep)
+                    raise StoryError(s)
+                else:
+                    self._current = node
+                    self._visited.add(node)
         else:
             raise StoryError("%s is not a neighbor of %s" % \
                              (str(node), str(self._current)))
@@ -142,6 +156,51 @@ class Story(nx.DiGraph):
             return unmet_deps
         else:
             return []
+
+    @random_events.setter
+    def random_events(self, d):
+        """Sets the random_events attribute. Adds nodes to the graph if
+        necessary
+        """
+        # check that the probabilities are valid
+        for node in d:
+            if d[node]: # handle empty list
+                sum_ = sum([p for _, p in d[node]])
+                if sum_ > 1:
+                    msg = 'Invalid random_events dict; '
+                    msg += 'probabilities sum to more than 1'
+                    raise StoryError(msg)
+            else:
+                d[node] = [(None, 0)]
+
+        d = copy(d) # copy the dict, but keep existing references
+        nodes = get_keys(d)
+        for node in nodes:
+            if not super(Story, self).has_node(node):
+                super(Story, self).add_node(node)
+
+        self._random_events = d
+
+    def _check_random(self, node):
+        """Given a node `node`, check whether it has a random event associated
+        with it. If so, roll to see whether the random event is executed.
+        Otherwise, do nothing.  If the random event occurs, set current to the
+        node associated with the random event.
+
+        Returns: {bool} True if random event occured, False otherwise 
+        """
+        if node in self._random_events:
+            rand_x = random.random()
+            cumulative_p = 0.0
+            for _, p in self._random_events[node]:
+                cumulative_p += p
+                if rand_x < cumulative_p:
+                    self._current = node
+                    self._visited.add(node)
+                    return True
+            return False
+        else:
+            return False
 
     def remove_node(self, n):
         if self._current == n:
