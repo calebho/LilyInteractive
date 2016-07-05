@@ -110,7 +110,7 @@ class Story(nx.DiGraph):
     @current.setter
     def current(self, node):
         if node in self.neighbors(self._current):
-            if self._check_random(node):
+            if self._check_random(self._current):
                 pass # current will be set in check_random
             else:
                 unmet_deps = self._check_deps(node)
@@ -174,10 +174,10 @@ class Story(nx.DiGraph):
                 d[node] = [(None, 0)]
 
         d = copy(d) # copy the dict, but keep existing references
-        nodes = get_keys(d)
-        for node in nodes:
-            if not super(Story, self).has_node(node):
-                super(Story, self).add_node(node)
+        for l in d.itervalues():
+            for node, _ in l:
+                if not super(Story, self).has_node(node):
+                    super(Story, self).add_node(node)
 
         self._random_events = d
 
@@ -192,11 +192,11 @@ class Story(nx.DiGraph):
         if node in self._random_events:
             rand_x = random.random()
             cumulative_p = 0.0
-            for _, p in self._random_events[node]:
+            for next_node, p in self._random_events[node]:
                 cumulative_p += p
                 if rand_x < cumulative_p:
-                    self._current = node
-                    self._visited.add(node)
+                    self._current = next_node
+                    self._visited.add(next_node)
                     return True
             return False
         else:
