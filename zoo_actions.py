@@ -24,19 +24,16 @@ def entrance(p):
     text = wrap_text(text, "GoodNews")
     speak(text)
 
-def parking_lotAct(player):
-    speak("You've reached the parking lot.")
-    x = random.random()
-    if x > 0.75:
-            speak("Oh no! Some monkeys escaped.")
-            speak("They have gotten into your car!")
-            runGif("ZooGifs/monkey_steals_wheel_cover.gif")
-            speak("Those thieves got away!")
-    speak("We get new exhibits often, so come back soon to see something new.")
-    speak("It's time to go home now. The End.")
-    return "quit"
+def parking_lot(player):
+    text = "You've reached the parking lot. "
+    if random.random() > 0.75:
+        text += "Oh no! Some monkeys escaped. "
+        text += "They have gotten into your car! "
+        runGif("ZooGifs/monkey_steals_wheel_cover.gif")
+        text += "Those thieves got away! "
+    text += "We get new exhibits often, so come back soon to see something new. "
 
-def monkeyAct(player):
+def monkeys(player):
     speak("Look at the cute monkeys!")
     runGif("ZooGifs/monkey.gif")
     speak("Where to now?")
