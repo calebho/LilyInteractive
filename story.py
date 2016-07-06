@@ -1,6 +1,7 @@
 import networkx as nx
 import random
 
+from numpy.random import multinomial
 from copy import copy
 
 def get_keys(d):
@@ -40,7 +41,7 @@ class StoryNode(object):
     """A story node representing a time period in the story
     """
 
-    def __init__(self, name, action):
+    def __init__(self, name, action): 
         """StoryNode constructor
 
         Parameters:
@@ -64,32 +65,40 @@ class StoryNode(object):
         return hash(self._name)
 
 class Story(nx.DiGraph):
-    """The Story class represented as a directed graph
+    """The Story class represented as a directed graph. Nodes connected by
+    unweighted edges represent events controlled by the user. For instance 
+    if an unweighted edge connects nodes `u` and `v`, the user can freely 
+    move from `u` to `v` (or `v` to `u` depending on the direction of the 
+    edge). 
+    Nodes connected by weighted edges represent events not  controlled by 
+    the user (non-player events). For instance, let `u`, `v`, and `w` be 
+    nodes in the graph. Let `u` be connected to `v` by a directed edge 
+    u --> v with weight `p` and let `u` be connected to `w` by a directed 
+    edge u --> w with no weight.
+                                 p
+                               /---> v 
+                             u
+                               \---> w
+    In this situation, the user can only move to `w`, but there is a chance
+    with probability `p` that the user ends up in `v` 
     """
 
-    def __init__(self, start, dependencies={}, random_events={}):
+    def __init__(self, start, dependencies=None):
         """Constructor for Story
 
         Parameters:
         start {hashable} The starting point of the story
         dependencies {dict} A tree describing StoryNode dependencies. Leaf nodes
                             should have value None
-        random_events {dict} A dict of `node: list` describing random events
-                             that can occur at the specified nodes. The list
-                             contains tuples of the form (n, p) where `n` is the
-                             "random event" node occuring with probability `p`.
         """
-        # TODO: player field?
         super(Story, self).__init__()
         self._current = start
         self._visited = set([start])
         self._dependencies = None
-        self.dependencies = dependencies
-        self._random_events = None
-        self.random_events = random_events
-
+        if dependencies:
+            self.dependencies = dependencies 
+        
         super(Story, self).add_node(start)
-
 
     @property
     def current(self):
@@ -100,30 +109,23 @@ class Story(nx.DiGraph):
         return copy(self._dependencies)
 
     @property
-    def random_events(self):
-        return copy(self._random_events)
-
-    @property
     def visited(self):
         return copy(self._visited)
 
     @current.setter
     def current(self, node):
-        if node in self.neighbors(self._current):
-            if self._check_random(self._current):
-                pass # current will be set in check_random
+        if node in self.reachables(self._current):
+            unmet_deps = self._check_deps(node)
+            if unmet_deps:
+                s = "[%s] has unmet dependencies: " % str(node)
+                for dep in unmet_deps:
+                    s += "[%s] " % str(dep)
+                raise StoryError(s)
             else:
-                unmet_deps = self._check_deps(node)
-                if unmet_deps:
-                    s = "[%s] has unmet dependencies: " % str(node)
-                    for dep in unmet_deps:
-                        s += "[%s] " % str(dep)
-                    raise StoryError(s)
-                else:
-                    self._current = node
-                    self._visited.add(node)
+                self._current = node
+                self._visited.add(node)
         else:
-            raise StoryError("%s is not a neighbor of %s" % \
+            raise StoryError("%s is not reachable from %s" % \
                              (str(node), str(self._current)))
 
     @dependencies.setter
@@ -136,7 +138,7 @@ class Story(nx.DiGraph):
         d = copy(d) # copy the dict, but keep existing references
         nodes = get_keys(d)
         for node in nodes:
-            if not super(Story, self).has_node(node):
+            if node not in self:
                 super(Story, self).add_node(node)
 
         self._dependencies = d
@@ -156,51 +158,55 @@ class Story(nx.DiGraph):
             return unmet_deps
         else:
             return []
-
-    @random_events.setter
-    def random_events(self, d):
-        """Sets the random_events attribute. Adds nodes to the graph if
-        necessary
+    
+    def generate_storyline(self, start):
+        """Given a starting node `start`, recursively construct a storyline
+        of non-player events by sampling from the probability distribution 
+        induced by the outgoing weighted edges 
         """
-        # check that the probabilities are valid
-        for node in d:
-            if d[node]: # handle empty list
-                sum_ = sum([p for _, p in d[node]])
-                if sum_ > 1:
-                    msg = 'Invalid random_events dict; '
-                    msg += 'probabilities sum to more than 1'
-                    raise StoryError(msg)
-            else:
-                d[node] = [(None, 0)]
+        if self.neighbors(start) == self.reachables(start):
+            # print 'no random events at [%s]' % str(start)
+            return []
 
-        d = copy(d) # copy the dict, but keep existing references
-        for l in d.itervalues():
-            for node, _ in l:
-                if not super(Story, self).has_node(node):
-                    super(Story, self).add_node(node)
-
-        self._random_events = d
-
-    def _check_random(self, node):
-        """Given a node `node`, check whether it has a random event associated
-        with it. If so, roll to see whether the random event is executed.
-        Otherwise, do nothing.  If the random event occurs, set current to the
-        node associated with the random event.
-
-        Returns: {bool} True if random event occured, False otherwise 
-        """
-        if node in self._random_events:
-            rand_x = random.random()
-            cumulative_p = 0.0
-            for next_node, p in self._random_events[node]:
-                cumulative_p += p
-                if rand_x < cumulative_p:
-                    self._current = next_node
-                    self._visited.add(next_node)
-                    return True
-            return False
+        possible_nodes = [\
+            node for node in self.neighbors(start) if self[start][node]]
+        w = lambda dest: self[start][dest]['weight']
+        # the weights form a probability distribution w/ indices corresponding
+        # to possible nodes  
+        weights = [w(dest) for dest in possible_nodes]
+        try:
+            cumulative_p = sum(weights)
+        except ValueError: # one of the weights is `None`
+            e_str = 'Weights for outgoing edges from [%s] not all float/int' % str(start)
+            raise StoryError(e_str)
+        if cumulative_p != 1:
+            e_str = 'Weights for outgoing edges from [%s] do not sum to 1' % str(start)
+            raise StoryError(e_str)
+        sample = list(multinomial(1, weights))
+        i = sample.index(1) # find the index of the action chosen 
+        next_node = possible_nodes[i]
+        if start == next_node: 
+            # print 'random event not executed'
+            return []
         else:
-            return False
+            # print '[%s] added' % str(next_node)
+            return [next_node] + self.generate_storyline(next_node)
+
+    def reachables(self, node):
+        """Given a node, return the list of reachable nodes. Reachable nodes
+        are defined as nodes that are neighbors of `node` and have an 
+        unweighted joining edge 
+        """
+        edge = lambda dest: self[node][dest] # the edge data 
+        return [dest for dest in self.neighbors(node) if not edge(dest)]
+
+    def jump_to(self, node):
+        """Jump to a certain point in the story 
+        """
+        if node in self:
+            self._current = node 
+        else:
+            raise StoryError('%s is not in the story' % str(node))
 
     def remove_node(self, n):
         if self._current == n:

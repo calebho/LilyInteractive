@@ -78,21 +78,21 @@ class StoryTests(unittest.TestCase):
         self.assertFalse(t.neighbors(b))
         self.assertFalse(t.neighbors(c))
 
-    def test_random_events(self):
-        with self.assertRaises(StoryError):
-            d = {'a': [('z', 1.5)]}
-            self.s.random_events = d
-            d = {'a': [('z', 0.5), ('y', 0.5), ('x', 0.5)]}
-            self.s.random_events = d
-
-        d = {'a': [('z', 0.5), ('y', 0.5)]}
-        self.s.random_events = d 
-        self.assertTrue('y' in self.s)
-        self.assertTrue('z' in self.s)
-        
+    def test_np_story(self):
         self.s.add_edge('a', 'b')
-        self.s.current = 'b'
-        self.assertTrue(self.s.current != 'b')
+        self.s.add_edge('a', 'c')
+        self.s.add_edge('a', 'z', weight=0.5)
+        with self.assertRaises(StoryError):
+            self.s.generate_storyline('a')
+
+        self.s.add_edge('a', 'a', weight=0.5)
+        self.s.add_edge('z', 'c')
+        self.s.generate_storyline('a')
+        self.s.add_edge('z', 'b', weight=0.25)
+        self.s.add_edge('z', 'z', weight=0.75)
+        self.s.generate_storyline('a')
+        for node in 'abcz':
+            self.assertTrue(node in self.s)
 
 class GetKeysTests(unittest.TestCase):
 
