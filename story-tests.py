@@ -61,6 +61,7 @@ class StoryTests(unittest.TestCase):
         t.current = 'b'
         t.current = 'c'
 
+    '''
     def test_story_node(self):
         foo = lambda: None
         a = StoryNode('a', foo)
@@ -77,6 +78,7 @@ class StoryTests(unittest.TestCase):
         self.assertTrue(c in t.neighbors(a))
         self.assertFalse(t.neighbors(b))
         self.assertFalse(t.neighbors(c))
+    '''
 
     def test_np_story(self):
         self.s.add_edge('a', 'b')
@@ -93,6 +95,66 @@ class StoryTests(unittest.TestCase):
         self.s.generate_storyline('a')
         for node in 'abcz':
             self.assertTrue(node in self.s)
+
+class StoryNodeTests(unittest.TestCase):
+    
+    def setUp(self):
+        self.s = Story('foo')
+        self.a = StoryNode(self.s, lambda: None)
+
+    def test_arg_dict(self):
+        self.assertTrue(not self.a.arg_dict) # no arguments 
+
+        with self.assertRaises(AssertionError):
+            d = {'arg': 'arg'}
+            self.a.arg_dict = d
+
+        b = StoryNode(self.s, lambda x: x)
+        self.assertTrue(b.arg_dict == {'x': 'x'})
+        b.arg_dict = {'x': 'y'} # map the argument `x` to `y` instead 
+        self.assertTrue(b.arg_dict == {'x': 'y'})
+        with self.assertRaises(AssertionError):
+            b.arg_dict = {'z': 'x'}
+
+        d = {'x': 'x'}
+        b.arg_dict = d 
+        self.assertTrue(b.arg_dict == d)
+        d['y'] = 'y'
+        self.assertTrue(b.arg_dict != d) # d was originally copied 
+
+    def test_run_conditions(self):
+        self.assertTrue(not self.a.run_conditions)
+        l = ['not callable']
+        with self.assertRaises(AssertionError):
+            self.a.run_conditions = l 
+
+        l = [lambda: True]
+        self.a.run_conditions = l 
+        self.assertTrue(self.a.run_conditions == l)
+        l.append(lambda: False)
+        self.assertTrue(self.a.run_conditions != l)
+
+    def test_dynamic_events(self):
+        d = {'a': 1, 'b': 2}
+        with self.assertRaises(AssertionError):
+            self.a.dynamic_events = d 
+
+        u = StoryNode(self.s, lambda: None)
+        v = StoryNode(self.s, lambda: None)
+        d = {u: 1, v: 2}
+        with self.assertRaises(AssertionError):
+            self.a.dynamic_events = d 
+
+        d[u] = 0.25 
+        d[v] = 0.75
+        self.a.dynamic_events = d 
+        self.assertTrue(self.a.dynamic_events == {u: 0.25, v: 0.75, self.a: 0})
+        d[u] = 0.1 
+        d[v] = 0.1
+        self.assertTrue(self.a.dynamic_events == {u: 0.25, v: 0.75, self.a: 0})
+        self.a.dynamic_events = d 
+        self.assertTrue(self.a.dynamic_events == {u: 0.1, v: 0.1, self.a: 0.8})
+
 
 class GetKeysTests(unittest.TestCase):
 
