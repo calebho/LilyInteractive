@@ -1,5 +1,6 @@
 import networkx as nx
 import random
+import inspect 
 
 from numpy.random import multinomial
 from copy import copy
@@ -41,28 +42,103 @@ class StoryNode(object):
     """A story node representing a time period in the story
     """
 
-    def __init__(self, name, action): 
+    def __init__(self, story, action, arg_dict=None, run_conditions=None, 
+                 dynamic_events=None): 
         """StoryNode constructor
 
         Parameters:
-        name {str} The name of the node. Should be unique
-        action {callable} A function representing an action
+        story {Story} The story that this node belongs to 
+        action {callable} The action to be executed at this node 
+        arg_dict {dict} The arguments to `action` mapped to the keys in
+                        `story.context`. Defaults to the identity map 
+        run_conditions {list} A list of callables returning truth-values 
+        dynamic_events {dict} A dict of StoryNode:float representing the 
+                              probability distribution according to which 
+                              nodes are selected 
         """
-        self._name = name
+        assert isinstance(story, Story), \
+            "Object passed to `story` is not a Story instance"
+        self._story = story
+        assert hasattr(action, '__call__'), \
+            "Object passed to `action` is not callable"
         self._action = action
+        self._arg_dict = None
+        if arg_dict:
+            self.arg_dict = arg_dict
+        else:
+            args, _, _, _ = inspect.getargspec(action)
+            self._arg_dict = {arg: arg for arg in args}
+        self._run_conditions = None
+        if run_conditions:
+            self.run_conditions = run_conditions
+        else:
+            self._run_conditions = []
+        self._dynamic_events = None
+        if dynamic_events:
+            self.dynamic_events = dynamic_events
+        else: 
+            self._dynamic_events = {self: 1.0}
 
     @property
-    def name(self):
-        return self._name
+    def story(self):
+        return self._story 
 
-    def __call__(self, *args, **kwargs):
-        return self._action(*args, **kwargs)
+    @property
+    def action(self):
+        return self._action
+
+    @property
+    def arg_dict(self):
+        return copy(self._arg_dict)
+
+    @property 
+    def run_conditions(self):
+        return copy(self._run_conditions)
+
+    @property 
+    def dynamic_events(self):
+        return copy(self._dynamic_events)
+
+    @arg_dict.setter
+    def arg_dict(self, d):
+        valid_args, _, _, _ = inspect.getargspec(action)
+        for arg in d:
+            assert arg in valid_args, \
+                "%s is not a valid argument to %s" % (arg, action.__name__)
+        self._arg_dict = copy(d)
+
+    @run_conditions.setter
+    def run_conditions(self, l):
+        for condition in l:
+            assert hasattr(condition, '__call__'), \
+                "%s is not callable" % str(condition)
+        self._run_conditions = copy(l)
+
+    @dynamic_events.setter
+    def dynamic_events(self, d):
+        for node in d:
+            assert isinstance(node, StoryNode), \
+                "%s is not a StoryNode instance" % str(node)
+        sum_ = sum([val for val in d.values()])
+        assert sum_ <= 1, "The sum of probabilities cannot exceed 1"
+
+        self._dynamic_events = copy(d)
+        self._dynamic_events[self] = 1.0 - sum_
+
+    def __call__(self):
+        raise NotImplementedError('TODO')
 
     def __str__(self):
-        return self._name
+        raise NotImplementedError('TODO')
 
     def __hash__(self):
-        return hash(self._name)
+        raise NotImplementedError('TODO')
+
+    def select(self):
+        """Selects a node to return based on the probability distrubtion
+        given by `dynamic_events`
+        """
+        raise NotImplementedError('TODO')
 
 class Story(nx.DiGraph):
     """The Story class represented as a directed graph. Nodes connected by
