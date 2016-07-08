@@ -42,7 +42,7 @@ class StoryNode(object):
     """A story node representing a time period in the story
     """
 
-    def __init__(self, story, action, arg_dict=None, run_conditions=None, 
+    def __init__(self, action, story=None, arg_dict=None, run_conditions=None, 
                  dynamic_events=None): 
         """StoryNode constructor
 
@@ -56,28 +56,26 @@ class StoryNode(object):
                               probability distribution according to which 
                               nodes are selected 
         """
-        assert isinstance(story, Story), \
-            "Object passed to `story` is not a Story instance"
-        self._story = story
+        self._story = None
+        if story:
+            self.story = story
+
         assert hasattr(action, '__call__'), \
             "Object passed to `action` is not callable"
         self._action = action
+
         self._arg_dict = None
         if arg_dict:
             self.arg_dict = arg_dict
         else:
             args, _, _, _ = inspect.getargspec(action)
             self._arg_dict = {arg: arg for arg in args}
+        
         self._run_conditions = None
-        if run_conditions:
-            self.run_conditions = run_conditions
-        else:
-            self._run_conditions = []
+        self.run_conditions = run_conditions if run_conditions else []
+        
         self._dynamic_events = None
-        if dynamic_events:
-            self.dynamic_events = dynamic_events
-        else: 
-            self._dynamic_events = {self: 1.0}
+        self.dynamic_events = dynamic_events if dynamic_events else {}
 
     @property
     def story(self):
@@ -98,6 +96,12 @@ class StoryNode(object):
     @property 
     def dynamic_events(self):
         return copy(self._dynamic_events)
+
+    @story.setter
+    def story(self, s):
+        assert isinstance(s, Story), \
+            "Object passed to `story` is not a Story instance"
+        self._story = s 
 
     @arg_dict.setter
     def arg_dict(self, d):
@@ -123,7 +127,6 @@ class StoryNode(object):
         assert sum_ <= 1, "The sum of probabilities cannot exceed 1"
 
         self._dynamic_events = copy(d)
-        self._dynamic_events[self] = 1.0 - sum_
 
     def __call__(self):
         c = self._story.context 
@@ -143,10 +146,14 @@ class StoryNode(object):
         """Selects a node to return based on the probability distrubtion
         given by `dynamic_events`
         """
-        if self.dynamic_events:
+        if self._dynamic_events:
             d_items = zip(*self._dynamic_events.items())
-            nodes = d_items[0]
-            p_dist = d_items[1]
+            nodes = list(d_items[0])
+            p_dist = list(d_items[1])
+            # add self to occupy leftover probability 
+            if sum(p_dist) < 1:
+                nodes.append(self)
+                p_dist.append(1. - sum(p_dist))
             sample = list(multinomial(1, p_dist))
 
             return nodes[sample.index(1)]
@@ -177,7 +184,7 @@ class Story(nx.DiGraph):
         """Constructor for Story
 
         Parameters:
-        start {StoryNode} The starting point of the story
+        start {StoryNode|callable} The starting point of the story
         dependencies {dict} A tree describing StoryNode dependencies. Leaf 
                             nodes should have value None
         input_fct {callable} A callable that accepts some sort of user input 
@@ -186,8 +193,10 @@ class Story(nx.DiGraph):
                               sort of output 
         """
         super(Story, self).__init__()
-        self._current = start
-        self._visited = set([start])
+        self._node_dict = {} # maps callable to StoryNode
+        start_node = self.add_node(start)
+        self._current = start_node
+        self._visited = set([start_node])
         self._context = None 
         self.context = context
         self._input_fct = None 
@@ -196,8 +205,6 @@ class Story(nx.DiGraph):
         self.output_fct = output_fct
         if dependencies:
             self.add_dependencies_from(dependencies) # TODO: keep track?
-
-        super(Story, self).add_node(start)
 
     @property
     def current(self):
@@ -216,18 +223,25 @@ class Story(nx.DiGraph):
         else:
             raise StoryError('%s not in the story' % str(node))
 
-    def add_node(self, c):
+    def add_node(self, c, *args, **kwargs):
         """Adds a StoryNode to the story 
 
         Parameters:
         c {StoryNode|callable} If StoryNode, then simply add it to the graph.
                                Otherwise, create a StoryNode using `c` first
+
+        Returns: {StoryNode} The StoryNode added
         """
         if isinstance(c, StoryNode):
-            super(Story, self).add_node(c)
+            c.story = self
+            super(Story, self).add_node(c, *args, **kwargs)
+            self._node_dict[c.action] = c
+            return c
         else:
-            n = StoryNode(self, c)
-            super(Story, self).add_node(n)
+            n = StoryNode(c, story=self)
+            super(Story, self).add_node(n, *args, **kwargs)
+            self._node_dict[n.action] = n
+            return n
 
     def get_node(self, name):
         """
