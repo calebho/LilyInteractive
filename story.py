@@ -211,7 +211,10 @@ class Story(nx.DiGraph):
     def current(self, node):
         """
         """
-        raise NotImplementedError('TODO')
+        if node in self:
+            self._current = node
+        else:
+            raise StoryError('%s not in the story' % str(node))
 
     def add_node(self, c):
         """
@@ -219,6 +222,11 @@ class Story(nx.DiGraph):
         raise NotImplementedError('TODO')
 
     def get_node(self, name):
+        """
+        """
+        raise NotImplementedError('TODO')
+
+    def get_next(self):
         """
         """
         raise NotImplementedError('TODO')
