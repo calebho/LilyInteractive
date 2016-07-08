@@ -126,7 +126,12 @@ class StoryNode(object):
         self._dynamic_events[self] = 1.0 - sum_
 
     def __call__(self):
-        raise NotImplementedError('TODO')
+        c = self._story.context 
+        kwargs = \
+            {arg_name: c[c_key] for arg_name, c_key in self._arg_dict.items()}
+        ret_val = self._action(**kwargs)
+        if ret_val:
+            self._story.update_context(ret_val)
 
     def __str__(self):
         return self._action.__name__
@@ -167,21 +172,31 @@ class Story(nx.DiGraph):
     with probability `p` that the user ends up in `v` 
     """
 
-    def __init__(self, start, dependencies=None):
+    def __init__(self, start, dependencies=None, input_fct=None, 
+                 output_fct=None, context=None):
         """Constructor for Story
 
         Parameters:
-        start {hashable} The starting point of the story
-        dependencies {dict} A tree describing StoryNode dependencies. Leaf nodes
-                            should have value None
+        start {StoryNode} The starting point of the story
+        dependencies {dict} A tree describing StoryNode dependencies. Leaf 
+                            nodes should have value None
+        input_fct {callable} A callable that accepts some sort of user input 
+                             and returns a str 
+        output_fct {callable} A callable that accepts a str and produces some
+                              sort of output 
         """
         super(Story, self).__init__()
         self._current = start
         self._visited = set([start])
-        self._dependencies = None
+        self._context = None 
+        self.context = context
+        self._input_fct = None 
+        self.input_fct = input_fct 
+        self._output_fct = None 
+        self.output_fct = output_fct
         if dependencies:
-            self.dependencies = dependencies 
-        
+            self.add_dependencies_from(dependencies) # TODO: keep track?
+
         super(Story, self).add_node(start)
 
     @property
@@ -189,113 +204,54 @@ class Story(nx.DiGraph):
         return self._current
 
     @property
-    def dependencies(self):
-        return copy(self._dependencies)
-
-    @property
     def visited(self):
         return copy(self._visited)
 
     @current.setter
     def current(self, node):
-        if node in self.reachables(self._current):
-            unmet_deps = self._check_deps(node)
-            if unmet_deps:
-                s = "[%s] has unmet dependencies: " % str(node)
-                for dep in unmet_deps:
-                    s += "[%s] " % str(dep)
-                raise StoryError(s)
-            else:
-                self._current = node
-                self._visited.add(node)
-        else:
-            raise StoryError("%s is not reachable from %s" % \
-                             (str(node), str(self._current)))
-
-    @dependencies.setter
-    def dependencies(self, d):
-        """Sets the dependencies attribute. Adds nodes to the graph if necessary
-
-        Parameters:
-        d {dict} A nested dictionary representing the dependency tree
         """
-        d = copy(d) # copy the dict, but keep existing references
-        nodes = get_keys(d)
-        for node in nodes:
-            if node not in self:
-                super(Story, self).add_node(node)
-
-        self._dependencies = d
-
-    def _check_deps(self, node):
-        """Check whether StoryNode `node` has any dependencies
-
-        Returns: {list} The list of unmet dependencies
         """
-        unmet_deps = []
-        v = get_value(self._dependencies, node)
-        if v:
-            deps = get_keys(v)
-            for dep in deps:
-                if dep not in self._visited:
-                    unmet_deps.append(dep)
-            return unmet_deps
-        else:
-            return []
+        raise NotImplementedError('TODO')
+
+    def add_node(self, c):
+        """
+        """
+        raise NotImplementedError('TODO')
+
+    def get_node(self, name):
+        """
+        """
+        raise NotImplementedError('TODO')
     
-    def generate_storyline(self, start):
-        """Given a starting node `start`, recursively construct a storyline
-        of non-player events by sampling from the probability distribution 
-        induced by the outgoing weighted edges 
+    def is_runnable(self, node):
         """
-        if self.neighbors(start) == self.reachables(start):
-            # print 'no random events at [%s]' % str(start)
-            return []
-
-        possible_nodes = [\
-            node for node in self.neighbors(start) if self[start][node]]
-        w = lambda dest: self[start][dest]['weight']
-        # the weights form a probability distribution w/ indices corresponding
-        # to possible nodes  
-        weights = [w(dest) for dest in possible_nodes]
-        try:
-            cumulative_p = sum(weights)
-        except ValueError: # one of the weights is `None`
-            e_str = 'Weights for outgoing edges from [%s] not all float/int' % str(start)
-            raise StoryError(e_str)
-        if cumulative_p != 1:
-            e_str = 'Weights for outgoing edges from [%s] do not sum to 1' % str(start)
-            raise StoryError(e_str)
-        sample = list(multinomial(1, weights))
-        i = sample.index(1) # find the index of the action chosen 
-        next_node = possible_nodes[i]
-        if start == next_node: 
-            # print 'random event not executed'
-            return []
-        else:
-            # print '[%s] added' % str(next_node)
-            return [next_node] + self.generate_storyline(next_node)
-
-    def reachables(self, node):
-        """Given a node, return the list of reachable nodes. Reachable nodes
-        are defined as nodes that are neighbors of `node` and have an 
-        unweighted joining edge 
         """
-        edge = lambda dest: self[node][dest] # the edge data 
-        return [dest for dest in self.neighbors(node) if not edge(dest)]
-
-    def jump_to(self, node):
-        """Jump to a certain point in the story 
+        raise NotImplementedError('TODO')
+    
+    def run(self):
         """
-        if node in self:
-            self._current = node 
-        else:
-            raise StoryError('%s is not in the story' % str(node))
+        """
+        raise NotImplementedError('TODO')
+    
+    def add_dependency(self, u, v):
+        """
+        """ 
+        raise NotImplementedError('TODO')
 
-    def remove_node(self, n):
-        if self._current == n:
-            raise StoryError('Cannot remove current node')
-        super(Story, self).remove_node(n)
+    def add_dependencies_from(self, d):
+        """
+        """
+        raise NotImplementedError('TODO')
+
+    def add_edge(self, u, v, *args, **kwargs):
+        """
+        """
+        raise NotImplementedError('TODO')
+
+    def add_edges_from(self, ebunch, *args, **kwargs):
+        """
+        """
+        raise NotImplementedError('TODO')
 
     def add_undirected_edge(self, u, v, *args, **kwargs):
         super(Story, self).add_edge(u, v, *args, **kwargs)
