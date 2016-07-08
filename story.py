@@ -138,12 +138,15 @@ class StoryNode(object):
         """Selects a node to return based on the probability distrubtion
         given by `dynamic_events`
         """
-        d_items = zip(*self._dynamic_events.items())
-        nodes = d_items[0]
-        p_dist = d_items[1]
-        sample = multinomial(1, p_dist)
+        if self.dynamic_events:
+            d_items = zip(*self._dynamic_events.items())
+            nodes = d_items[0]
+            p_dist = d_items[1]
+            sample = list(multinomial(1, p_dist))
 
-        return nodes[sample.index(1)]
+            return nodes[sample.index(1)]
+        else:
+            return self 
 
 class Story(nx.DiGraph):
     """The Story class represented as a directed graph. Nodes connected by

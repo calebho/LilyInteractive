@@ -102,6 +102,9 @@ class StoryNodeTests(unittest.TestCase):
         self.s = Story('foo')
         self.a = StoryNode(self.s, lambda: None)
 
+    def tearDown(self):
+        del self.a
+
     def test_arg_dict(self):
         self.assertTrue(not self.a.arg_dict) # no arguments 
 
@@ -139,6 +142,10 @@ class StoryNodeTests(unittest.TestCase):
         with self.assertRaises(AssertionError):
             self.a.dynamic_events = d 
 
+        d = {'a': 0.5, 'b': 0.5}
+        with self.assertRaises(AssertionError):
+            self.a.dynamic_events = d 
+
         u = StoryNode(self.s, lambda: None)
         v = StoryNode(self.s, lambda: None)
         d = {u: 1, v: 2}
@@ -154,6 +161,19 @@ class StoryNodeTests(unittest.TestCase):
         self.assertTrue(self.a.dynamic_events == {u: 0.25, v: 0.75, self.a: 0})
         self.a.dynamic_events = d 
         self.assertTrue(self.a.dynamic_events == {u: 0.1, v: 0.1, self.a: 0.8})
+
+    def test_select(self):
+        self.assertTrue(self.a.select() == self.a)
+
+        b = StoryNode(self.s, lambda: None)
+        self.a.dynamic_events = {b: 0.5}
+        a_flag = False 
+        b_flag = False
+        for i in range(10):
+            if self.a.select() == self.a: a_flag = True
+            if self.a.select() == b: b_flag = True
+        # unlikely that the same node is chosen 10 times in row
+        self.assertTrue(a_flag and b_flag) 
 
 
 class GetKeysTests(unittest.TestCase):
