@@ -24,6 +24,20 @@ class StoryTests(unittest.TestCase):
         self.s.add_node(n)
         self.assertTrue(n in self.s)
 
+    def test_get(self):
+        with self.assertRaises(AssertionError):
+            self.s.get_node('not a callable')
+
+        with self.assertRaises(StoryError):
+            foo = lambda: None 
+            self.s.get_node(foo)
+
+        foo = lambda: None 
+        foo_node = self.s.add_node(foo)
+        self.assertTrue(self.s.get_node(foo) == foo_node)
+
+        
+
 class StoryNodeTests(unittest.TestCase):
     
     def setUp(self):

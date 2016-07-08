@@ -243,10 +243,14 @@ class Story(nx.DiGraph):
             self._node_dict[n.action] = n
             return n
 
-    def get_node(self, name):
+    def get_node(self, c):
+        """Get a node by its callable
         """
-        """
-        raise NotImplementedError('TODO')
+        assert hasattr(c, '__call__'), '%s is not a callable' % str(c)
+        if c in self._node_dict:
+            return self._node_dict[c]
+        else:
+            raise StoryError('No StoryNode associated with that callable')
 
     def get_next(self):
         """
