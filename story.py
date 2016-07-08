@@ -101,10 +101,10 @@ class StoryNode(object):
 
     @arg_dict.setter
     def arg_dict(self, d):
-        valid_args, _, _, _ = inspect.getargspec(action)
+        valid_args, _, _, _ = inspect.getargspec(self._action)
         for arg in d:
             assert arg in valid_args, \
-                "%s is not a valid argument to %s" % (arg, action.__name__)
+                "%s is not a valid argument to %s" % (arg, self._action.__name__)
         self._arg_dict = copy(d)
 
     @run_conditions.setter
@@ -129,16 +129,21 @@ class StoryNode(object):
         raise NotImplementedError('TODO')
 
     def __str__(self):
-        raise NotImplementedError('TODO')
+        return self._action.__name__
 
     def __hash__(self):
-        raise NotImplementedError('TODO')
+        return hash(self._action)
 
     def select(self):
         """Selects a node to return based on the probability distrubtion
         given by `dynamic_events`
         """
-        raise NotImplementedError('TODO')
+        d_items = zip(*self._dynamic_events.items())
+        nodes = d_items[0]
+        p_dist = d_items[1]
+        sample = multinomial(1, p_dist)
+
+        return nodes[sample.index(1)]
 
 class Story(nx.DiGraph):
     """The Story class represented as a directed graph. Nodes connected by
