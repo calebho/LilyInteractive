@@ -217,9 +217,17 @@ class Story(nx.DiGraph):
             raise StoryError('%s not in the story' % str(node))
 
     def add_node(self, c):
+        """Adds a StoryNode to the story 
+
+        Parameters:
+        c {StoryNode|callable} If StoryNode, then simply add it to the graph.
+                               Otherwise, create a StoryNode using `c` first
         """
-        """
-        raise NotImplementedError('TODO')
+        if isinstance(c, StoryNode):
+            super(Story, self).add_node(c)
+        else:
+            n = StoryNode(self, c)
+            super(Story, self).add_node(n)
 
     def get_node(self, name):
         """
