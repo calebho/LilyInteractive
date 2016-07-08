@@ -38,6 +38,9 @@ def get_value(d, k):
 class StoryError(Exception):
     pass
 
+class StoryNodeError(Exception):
+    pass
+
 class StoryNode(object):
     """A story node representing a time period in the story
     """
@@ -128,19 +131,39 @@ class StoryNode(object):
 
         self._dynamic_events = copy(d)
 
-    def __call__(self):
-        c = self._story.context 
-        kwargs = \
-            {arg_name: c[c_key] for arg_name, c_key in self._arg_dict.items()}
-        ret_val = self._action(**kwargs)
-        if ret_val:
-            self._story.update_context(ret_val)
+    def __call__(self, force=False):
+        if force or self.is_runnable():
+            c = self._story.context 
+            kwargs = \
+                {arg_name: c[c_key] for arg_name, c_key in self._arg_dict.items()}
+            ret_val = self._action(**kwargs)
+            if ret_val:
+                self._story.update_context(ret_val)
+        else:
+            raise StoryNodeError('Run conditions not satisfied')
 
     def __str__(self):
         return self._action.__name__
 
     def __hash__(self):
         return hash(self._action)
+
+    def is_runnable(self):
+        """Checks run conditions 
+        
+        Returns: {bool} True if the conditions are satisfied, False otherwise
+        """
+        return self._check_conditions(self._run_conditions)
+
+    def _check_conditions(self, l):
+        """Helper for is_runnable
+        """
+        if not l:
+            return True 
+        elif len(l) == 1:
+            return l[0]()
+        else:
+            return l[0]() and self._check_conditions(l[1:])
 
     def select(self):
         """Selects a node to return based on the probability distrubtion
@@ -253,11 +276,6 @@ class Story(nx.DiGraph):
             raise StoryError('No StoryNode associated with that callable')
 
     def get_next(self):
-        """
-        """
-        raise NotImplementedError('TODO')
-    
-    def is_runnable(self, node):
         """
         """
         raise NotImplementedError('TODO')

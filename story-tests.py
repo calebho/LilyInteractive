@@ -1,6 +1,7 @@
 import unittest
 
-from story import Story, StoryNode, StoryError, get_keys, get_value
+from story import Story, StoryNode, StoryError, StoryNodeError, get_keys, \
+                  get_value
 
 class StoryTests(unittest.TestCase):
 
@@ -35,8 +36,6 @@ class StoryTests(unittest.TestCase):
         foo = lambda: None 
         foo_node = self.s.add_node(foo)
         self.assertTrue(self.s.get_node(foo) == foo_node)
-
-        
 
 class StoryNodeTests(unittest.TestCase):
     
@@ -103,6 +102,13 @@ class StoryNodeTests(unittest.TestCase):
         self.assertTrue(self.a.dynamic_events == {u: 0.25, v: 0.75})
         self.a.dynamic_events = d 
         self.assertTrue(self.a.dynamic_events == {u: 0.1, v: 0.1})
+
+    def test_is_runnable(self):
+        self.a.run_conditions = [lambda: True, lambda: True]
+        self.assertTrue(self.a.is_runnable())
+
+        self.a.run_conditions = [lambda: False, lambda: True]
+        self.assertFalse(self.a.is_runnable())
 
     def test_select(self):
         self.assertTrue(self.a.select() == self.a)
