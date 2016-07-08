@@ -7,7 +7,22 @@ class StoryTests(unittest.TestCase):
     def setUp(self):
         foo = lambda: None 
         n = StoryNode(foo)
-        # self.s = Story('a')
+        self.s = Story(n)
+
+    def tearDown(self):
+        del self.s
+
+    def test_add(self):
+        with self.assertRaises(AssertionError):
+            self.s.add_node('s')
+
+        bar = lambda: None 
+        bar_node = self.s.add_node(bar)
+        self.assertTrue(bar_node in self.s)
+
+        n = StoryNode(lambda: None)
+        self.s.add_node(n)
+        self.assertTrue(n in self.s)
 
 class StoryNodeTests(unittest.TestCase):
     
