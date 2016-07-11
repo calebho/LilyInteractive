@@ -6,9 +6,10 @@ from story import Story, StoryNode, StoryError, StoryNodeError, get_keys, \
 class StoryTests(unittest.TestCase):
 
     def setUp(self):
+        self.s = Story()
         foo = lambda: None 
-        n = StoryNode(foo)
-        self.s = Story(n)
+        start = StoryNode(foo)
+        self.s.add_node(start, start=True)
 
     def tearDown(self):
         del self.s
@@ -16,26 +17,87 @@ class StoryTests(unittest.TestCase):
     def test_add(self):
         with self.assertRaises(AssertionError):
             self.s.add_node('s')
-
+    
         bar = lambda: None 
-        bar_node = self.s.add_node(bar)
-        self.assertTrue(bar_node in self.s)
-
-        n = StoryNode(lambda: None)
-        self.s.add_node(n)
-        self.assertTrue(n in self.s)
-
-    def test_get(self):
-        with self.assertRaises(AssertionError):
-            self.s.get_node('not a callable')
-
         with self.assertRaises(StoryError):
-            foo = lambda: None 
-            self.s.get_node(foo)
+            self.s.add_node(bar, start=True)
+        self.s.add_node(bar)
+        self.assertTrue(bar in self.s)
 
-        foo = lambda: None 
-        foo_node = self.s.add_node(foo)
-        self.assertTrue(self.s.get_node(foo) == foo_node)
+
+    # def test_get(self):
+    #     with self.assertRaises(AssertionError):
+    #         self.s.get_node('not a callable')
+
+    #     with self.assertRaises(StoryError):
+    #         foo = lambda: None 
+    #         self.s.get_node(foo)
+
+    #     foo = lambda: None 
+    #     foo_node = self.s.add_node(foo)
+    #     self.assertTrue(self.s.get_node(foo) == foo_node)
+    
+    def test_add_edge(self):
+        a = 'not callable'
+        b = 'also not callable'
+        with self.assertRaises(AssertionError):
+            self.s.add_edge(a, b)
+        
+        f1 = lambda: None
+        f2 = lambda: None 
+        self.s.add_edge(f1, f2)
+        self.assertTrue(f1 in self.s)
+        self.assertTrue(f2 in self.s)
+        self.assertTrue(f2 in self.s.neighbors(f1))
+        self.assertFalse(f1 in self.s.neighbors(f2))
+        
+        g1 = lambda: None 
+        g2 = lambda: None 
+        h1 = lambda: None 
+        h2 = lambda: None 
+        ebunch = [(g1, g2), (h1, h2)]
+        self.s.add_edges_from(ebunch)
+        for fct1, fct2 in ebunch:
+            self.assertTrue(fct1 in self.s)
+            self.assertTrue(fct2 in self.s)
+            self.assertTrue(fct2 in self.s.neighbors(fct1))
+            self.assertFalse(fct1 in self.s.neighbors(fct2))
+
+    # def test_add_undir_edge(self):
+    #     a = 'not callable'
+    #     b = 'also not callable'
+    #     with self.assertRaises(AssertionError):
+    #         self.s.add_undirected_edge(a, b)
+    #     
+    #     f1 = lambda: None
+    #     f2 = lambda: None 
+    #     n2 = StoryNode(f2)
+    #     self.s.add_undirected_edge(f1, n2)
+    #     n1 = self.s.get_node(f1)
+    #     self.assertTrue(n1 in self.s)
+    #     self.assertTrue(n2 in self.s)
+    #     # print self.s.nodes()
+    #     # print self.s.edges()
+    #     self.assertTrue(n1 in self.s and n2 in self.s)
+    #     self.assertTrue(n2 in self.s.neighbors(n1))
+    #     self.assertTrue(n1 in self.s.neighbors(n2))
+    #     
+    #     g1 = lambda: None 
+    #     g2 = lambda: None 
+    #     h1 = lambda: None 
+    #     h2 = lambda: None 
+    #     ebunch = [(g1, g2), (h1, h2)]
+    #     self.s.add_undirected_edges_from(ebunch)
+    #     for fct1, fct2 in ebunch:
+    #         n1 = self.s.get_node(fct1)
+    #         n2 = self.s.get_node(fct2)
+    #         self.assertTrue(n1 in self.s)
+    #         self.assertTrue(n2 in self.s)
+    #         self.assertTrue(n2 in self.s.neighbors(n1))
+    #         self.assertTrue(n1 in self.s.neighbors(n2))
+
+
+
 
 class StoryNodeTests(unittest.TestCase):
     

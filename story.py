@@ -178,7 +178,7 @@ class StoryNode(object):
                 nodes.append(self)
                 p_dist.append(1. - sum(p_dist))
             sample = list(multinomial(1, p_dist))
-
+            
             return nodes[sample.index(1)]
         else:
             return self 
@@ -202,32 +202,27 @@ class Story(nx.DiGraph):
     with probability `p` that the user ends up in `v` 
     """
 
-    def __init__(self, start, dependencies=None, input_fct=None, 
-                 output_fct=None, context=None):
+    def __init__(self, input_fct=None, output_fct=None):
         """Constructor for Story
 
         Parameters:
-        start {StoryNode|callable} The starting point of the story
-        dependencies {dict} A tree describing StoryNode dependencies. Leaf 
-                            nodes should have value None
         input_fct {callable} A callable that accepts some sort of user input 
                              and returns a str 
         output_fct {callable} A callable that accepts a str and produces some
                               sort of output 
         """
         super(Story, self).__init__()
-        self._node_dict = {} # maps callable to StoryNode
-        start_node = self.add_node(start)
-        self._current = start_node
-        self._visited = set([start_node])
-        self._context = None 
-        self.context = context
+        # self._node_dict = {} # maps callable to StoryNode
+        # self.add_node(start)
+        self._current = None
+        self._visited = set()
+        self._context = {}
         self._input_fct = None 
         self.input_fct = input_fct 
         self._output_fct = None 
         self.output_fct = output_fct
-        if dependencies:
-            self.add_dependencies_from(dependencies) # TODO: keep track?
+        # if dependencies:
+        #     self.add_dependencies_from(dependencies) # TODO: keep track?
 
     @property
     def current(self):
@@ -236,6 +231,18 @@ class Story(nx.DiGraph):
     @property
     def visited(self):
         return copy(self._visited)
+
+    @property
+    def context(self):
+        return copy(self._context)
+
+    @property
+    def input_fct(self):
+        return self._input_fct
+
+    @property
+    def output_fct(self):
+        return self._output_fct
 
     @current.setter
     def current(self, node):
@@ -246,26 +253,41 @@ class Story(nx.DiGraph):
         else:
             raise StoryError('%s not in the story' % str(node))
 
-    def add_node(self, c, *args, **kwargs):
-        """Adds a StoryNode to the story 
+    @context.setter
+    def context(self, d):
+        raise NotImplementedError('TODO')
+
+    @input_fct.setter
+    def input_fct(self, f):
+        self._input_fct = f
+
+    @output_fct.setter
+    def output_fct(self, f):
+        self._output_fct = f
+
+    def add_node(self, c, arg_dict=None, run_conditions=None, 
+                 dynamic_events=None, start=False):
+        """Adds a node to the story 
 
         Parameters:
-        c {StoryNode|callable} If StoryNode, then simply add it to the graph.
-                               Otherwise, create a StoryNode using `c` first
-
-        Returns: {StoryNode} The StoryNode added
+        c {callable} A callable representing an specific action in the story
+        arg_dict {dict} The arguments to `action` mapped to the keys in
+                        `story.context`. Defaults to the identity map 
+        run_conditions {list} A list of callables returning truth-values 
+        dynamic_events {dict} A dict of StoryNode:float representing the 
+                              probability distribution according to which 
+                              nodes are selected 
         """
-        if isinstance(c, StoryNode):
-            c.story = self
-            super(Story, self).add_node(c, *args, **kwargs)
-            self._node_dict[c.action] = c
-            return c
-        else:
-            n = StoryNode(c, story=self)
-            super(Story, self).add_node(n, *args, **kwargs)
-            self._node_dict[n.action] = n
-            return n
-
+        assert hasattr(c, '__call__'), '%s is not callable' % str(c)
+        if start and not self._current:
+            self._current = c
+            self._visited.add(c)
+        elif start:
+            raise StoryError('Start is already set')
+        super(Story, self).add_node(c, arg_dict=arg_dict, 
+                                    run_conditions=run_conditions, 
+                                    dynamic_events=dynamic_events)
+        
     def get_node(self, c):
         """Get a node by its callable
         """
@@ -296,21 +318,28 @@ class Story(nx.DiGraph):
         raise NotImplementedError('TODO')
 
     def add_edge(self, u, v, *args, **kwargs):
+        """If `u` and `v` aren't StoryNodes, convert them first then add the 
+        edge 
         """
-        """
-        raise NotImplementedError('TODO')
+        assert hasattr(u, '__call__'), '%s is not callable' % str(u)
+        assert hasattr(v, '__call__'), '%s is not callable' % str(v)
+        super(Story, self).add_edge(u, v, *args, **kwargs)
 
     def add_edges_from(self, ebunch, *args, **kwargs):
+        """Similar to add edge, convert nodes to StoryNodes first 
         """
-        """
-        raise NotImplementedError('TODO')
+        for e in ebunch:
+            assert hasattr(e[0], '__call__'), '%s is not callable' % str(e[0])
+            assert hasattr(e[1], '__call__'), '%s is not callable' % str(e[1])
+
+        super(Story, self).add_edges_from(ebunch, *args, **kwargs)
 
     def add_undirected_edge(self, u, v, *args, **kwargs):
-        super(Story, self).add_edge(u, v, *args, **kwargs)
-        super(Story, self).add_edge(v, u, *args, **kwargs)
+        self.add_edge(u, v, *args, **kwargs)
+        self.add_edge(v, u, *args, **kwargs)
 
     def add_undirected_edges_from(self, ebunch, *args, **kwargs):
-        super(Story, self).add_edges_from(ebunch, *args, **kwargs)
+        self.add_edges_from(ebunch, *args, **kwargs)
 
         ebunch_reversed = []
         for edge in ebunch:
@@ -319,7 +348,7 @@ class Story(nx.DiGraph):
             if len(edge) == 3:
                 new_e.append(edge[2])
             ebunch_reversed.append(tuple(new_e))
-        super(Story, self).add_edges_from(ebunch_reversed, *args, **kwargs)
+        self.add_edges_from(ebunch_reversed, *args, **kwargs)
 
     def get_nodes_by_name(self):
         """Returns a dict mapping the names of the nodes to the nodes
