@@ -255,7 +255,13 @@ class Story(nx.DiGraph):
 
     @context.setter
     def context(self, d):
-        raise NotImplementedError('TODO')
+        self._context = copy(d)
+
+    def update_context(self, d):
+        """
+        """
+        for k, v in d.iteritems():
+            self._context[k] = v
 
     @input_fct.setter
     def input_fct(self, f):

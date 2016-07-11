@@ -37,6 +37,13 @@ class StoryTests(unittest.TestCase):
     #     foo_node = self.s.add_node(foo)
     #     self.assertTrue(self.s.get_node(foo) == foo_node)
     
+    def test_context(self):
+        d = {'a': 1, 'b': 2}
+        self.s.context = d
+        self.assertTrue(self.s.context == d)
+        d['c'] = 3
+        self.assertFalse(self.s.context == d)
+
     def test_add_edge(self):
         a = 'not callable'
         b = 'also not callable'
