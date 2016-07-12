@@ -229,7 +229,8 @@ class Story(nx.DiGraph):
         """
         self._run_current()
         if not self.is_finished():
-            self.current = self._get_next()
+            next_node = self._get_next()
+            self.current = next_node if next_node else self._current
 
     @property
     def current(self):
@@ -420,11 +421,6 @@ class Story(nx.DiGraph):
         else:
             return True
 
-    def reset(self):
-        """
-        """
-        raise NotImplementedError('TODO')
-    
 ##########################################################################
 ####################### PRIVATE ##########################################
 ##########################################################################
@@ -434,16 +430,15 @@ class Story(nx.DiGraph):
         """
         neighbors = {f.__name__: f for f in self.neighbors(self._current)}
 
-        while True:
-            user_inp = self._input_fct('Next? ') # TODO
-            if user_inp in neighbors:
-                node = neighbors[user_inp]
-                if self._is_runnable(node):
-                    return self._select(node)
-                else:
-                    print('Run conditions for [%s] not met' % node.__name__)
+        user_inp = self._input_fct('Next? ') # TODO
+        if user_inp in neighbors:
+            node = neighbors[user_inp]
+            if self._is_runnable(node):
+                return self._select(node)
             else:
-                print('That is not a valid node')
+                self.output_fct('Run conditions for [%s] not met' % node.__name__)
+        else:
+            self.output_fct('That is not a valid node')
                     
     def _select(self, node):
         """Selects a node to return based on the probability distrubtion
