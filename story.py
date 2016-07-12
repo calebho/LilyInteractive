@@ -186,22 +186,7 @@ class StoryNode(object):
             return self 
 
 class Story(nx.DiGraph):
-    """The Story class represented as a directed graph. Nodes connected by
-    unweighted edges represent events controlled by the user. For instance 
-    if an unweighted edge connects nodes `u` and `v`, the user can freely 
-    move from `u` to `v` (or `v` to `u` depending on the direction of the 
-    edge). 
-    Nodes connected by weighted edges represent events not  controlled by 
-    the user (non-player events). For instance, let `u`, `v`, and `w` be 
-    nodes in the graph. Let `u` be connected to `v` by a directed edge 
-    u --> v with weight `p` and let `u` be connected to `w` by a directed 
-    edge u --> w with no weight.
-                                 p
-                               /---> v 
-                             u
-                               \---> w
-    In this situation, the user can only move to `w`, but there is a chance
-    with probability `p` that the user ends up in `v` 
+    """The Story class represented as a directed graph.
     """
 
     def __init__(self, input_fct=None, output_fct=None):
@@ -347,8 +332,13 @@ class Story(nx.DiGraph):
     def add_nodes_from(self, nodes, arg_dict=None, run_conditions=None,
                        dynamic_events=None):
         for node in nodes:
-            self.add_node(node, arg_dict=arg_dict, run_conditions=run_conditions,
-                          dynamic_events=dynamic_events)
+            assert hasattr(node, '__call__'), '%s is not callable' % str(node)
+
+        if not arg_dict: arg_dict = {}
+        if not run_conditions: run_conditions = []
+        if not dynamic_events: dynamic_events = {}
+        super(Story, self).add_nodes_from(nodes, arg_dict=arg_dict, 
+                run_conditions=run_conditions, dynamic_events=dynamic_events)
 
     def add_dependency(self, u, v):
         """Adds a dependency from u to v. That is to say, going to u depends
@@ -404,14 +394,6 @@ class Story(nx.DiGraph):
                 new_e.append(edge[2])
             ebunch_reversed.append(tuple(new_e))
         self.add_edges_from(ebunch_reversed, *args, **kwargs)
-
-    def get_nodes_by_name(self):
-        """Returns a dict mapping the names of the nodes to the nodes
-        """
-        try:
-            return {node.name: node for node in super(Story, self).nodes()}
-        except AttributeError:
-            raise StoryError('One or more nodes is not of type StoryNode')
 
     def is_finished(self):
         """Check whether the story is finished (current is a leaf node)
