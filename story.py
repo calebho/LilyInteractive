@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import networkx as nx
 import random
 import inspect 
@@ -244,12 +246,46 @@ class Story(nx.DiGraph):
     def output_fct(self):
         return self._output_fct
 
+    def arg_dict(self, n=None):
+        """Gets the arg dict of node `n`. If not provided, defaults to current.
+        If current is not set, returns an empty dict
+        """
+        if n:
+            return self.node[n]['arg_dict']
+        elif self._current:
+            return self.node[self._current]['arg_dict']
+        else:
+            return {}
+
+    def run_conditions(self, n=None):
+        """Gets the run conditions list of node `n`. If not provided, defaults
+        to current. If current is not set, returns an empty list
+        """
+        if n:
+            return self.node[n]['run_conditions']
+        elif self._current:
+            return self.node[self._current]['run_conditions']
+        else:
+            return []
+
+    def dynamic_events(self, n=None):
+        """Gets the dynamic events dict of node `n`. If not provided, defaults
+        to current. If current is not set, return an empty dict
+        """
+        if n:
+            return self.node[n]['dynamic_events']
+        elif self._current:
+            return self.node[self._current]['dynamic_events']
+        else:
+            return {}
+
     @current.setter
     def current(self, node):
-        """
+        """Sets current to the provided node and adds node to visited
         """
         if node in self:
             self._current = node
+            self._visited.add(node)
         else:
             raise StoryError('%s not in the story' % str(node))
 
@@ -265,11 +301,17 @@ class Story(nx.DiGraph):
 
     @input_fct.setter
     def input_fct(self, f):
-        self._input_fct = f
+        if f:
+            self._input_fct = f
+        else:
+            self._input_fct = raw_input
 
     @output_fct.setter
     def output_fct(self, f):
-        self._output_fct = f
+        if f:
+            self._output_fct = f
+        else:
+            self._output_fct = print
 
     def add_node(self, c, arg_dict=None, run_conditions=None, 
                  dynamic_events=None, start=False):
@@ -285,33 +327,87 @@ class Story(nx.DiGraph):
                               nodes are selected 
         """
         assert hasattr(c, '__call__'), '%s is not callable' % str(c)
-        if start and not self._current:
-            self._current = c
-            self._visited.add(c)
-        elif start:
-            raise StoryError('Start is already set')
+        if not arg_dict: arg_dict = {}
+        if not run_conditions: run_conditions = []
+        if not dynamic_events: dynamic_events = {}
         super(Story, self).add_node(c, arg_dict=arg_dict, 
                                     run_conditions=run_conditions, 
                                     dynamic_events=dynamic_events)
-        
-    def get_node(self, c):
-        """Get a node by its callable
-        """
-        assert hasattr(c, '__call__'), '%s is not a callable' % str(c)
-        if c in self._node_dict:
-            return self._node_dict[c]
-        else:
-            raise StoryError('No StoryNode associated with that callable')
+        if start and not self._current:
+            self.current = c
+        elif start:
+            raise StoryError('Start is already set')
 
-    def get_next(self):
+    def _get_next(self):
+        """Gets the next node from the user and returns the appropriate node
+        """
+        neighbors = {f.__name__: f for f in self.neighbors(self._current)}
+
+        while True:
+            user_inp = self._input_fct('Next? ') # TODO
+            if user_inp in neighbors:
+                node = neighbors[user_inp]
+                if self._is_runnable(node):
+                    return self._select(node)
+                else:
+                    print('Run conditions for [%s] not met' % node.__name__)
+            else:
+                print('That is not a valid node')
+                    
+    def _select(self, node):
+        """Selects a node to return based on the probability distrubtion
+        given by `dynamic_events`
+        """
+        dynamic_events = self.dynamic_events(node)
+        if dynamic_events:
+            d_items = zip(*dynamic_events.items())
+            nodes = list(d_items[0])
+            p_dist = list(d_items[1])
+            # add node to occupy leftover probability 
+            if sum(p_dist) < 1:
+                nodes.append(node)
+                p_dist.append(1. - sum(p_dist))
+            sample = list(multinomial(1, p_dist))
+            
+            return nodes[sample.index(1)]
+        else:
+            return node
+
+    def __call__(self):
+        """Runs one timestep the story
+        """
+        self._run_current()
+        if not self.is_finished():
+            self.current = self._get_next()
+
+    def _run_current(self):
         """
         """
-        raise NotImplementedError('TODO')
-    
-    def run(self):
+        if not self._current:
+            return 
+
+        c = self._context
+        arg_dict = self.arg_dict() 
+        kwargs = \
+            {arg_name: c[c_key] for arg_name, c_key in arg_dict.iteritems()}
+        ret_val = self._current(**kwargs)
+        if ret_val:
+            self.update_context(ret_val)
+
+    def _is_runnable(self, n):
+        """Checks whether the run conditions are satisifed for node `n` 
         """
+        return self._check_conditions(self.run_conditions(n))
+
+    def _check_conditions(self, l):
+        """Helper for is_runnable
         """
-        raise NotImplementedError('TODO')
+        if not l:
+            return True 
+        elif len(l) == 1:
+            return l[0]()
+        else:
+            return l[0]() and self._check_conditions(l[1:])
     
     def add_dependency(self, u, v):
         """
@@ -367,4 +463,12 @@ class Story(nx.DiGraph):
     def is_finished(self):
         """Check whether the story is finished (current is a leaf node)
         """
-        return not super(Story, self).neighbors(self._current)
+        if self._current:
+            return not super(Story, self).neighbors(self._current)
+        else:
+            return True
+
+    def reset(self):
+        """
+        """
+        raise NotImplementedError('TODO')

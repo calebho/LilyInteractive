@@ -1,4 +1,5 @@
 import unittest
+import mock
 
 from story import Story, StoryNode, StoryError, StoryNodeError, get_keys, \
                   get_value
@@ -7,9 +8,8 @@ class StoryTests(unittest.TestCase):
 
     def setUp(self):
         self.s = Story()
-        foo = lambda: None 
-        start = StoryNode(foo)
-        self.s.add_node(start, start=True)
+        # start = lambda: None
+        # self.s.add_node(start, start=True)
 
     def tearDown(self):
         del self.s
@@ -18,7 +18,9 @@ class StoryTests(unittest.TestCase):
         with self.assertRaises(AssertionError):
             self.s.add_node('s')
     
-        bar = lambda: None 
+        start = lambda: None
+        self.s.add_node(start, start=True)
+        bar = lambda: None
         with self.assertRaises(StoryError):
             self.s.add_node(bar, start=True)
         self.s.add_node(bar)
@@ -41,7 +43,7 @@ class StoryTests(unittest.TestCase):
         d = {'a': 1, 'b': 2}
         self.s.context = d
         self.assertTrue(self.s.context == d)
-        d['c'] = 3
+        d['c'] = 3 # should not change s.context
         self.assertFalse(self.s.context == d)
 
     def test_add_edge(self):
@@ -69,6 +71,20 @@ class StoryTests(unittest.TestCase):
             self.assertTrue(fct2 in self.s)
             self.assertTrue(fct2 in self.s.neighbors(fct1))
             self.assertFalse(fct1 in self.s.neighbors(fct2))
+
+    def test_run(self):
+        # test empty
+        self.s()
+    
+        def foo():
+            print 'foo'
+        def bar():
+            print 'bar'
+        self.s.add_node(foo, start=True)
+        self.s.add_node(bar)
+        self.s.add_edge(foo, bar)
+        self.s.input_fct = lambda _: 'bar'
+        self.s()
 
     # def test_add_undir_edge(self):
     #     a = 'not callable'
