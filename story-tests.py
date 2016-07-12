@@ -99,9 +99,6 @@ class StoryTests(unittest.TestCase):
 
 
     def test_run(self):
-        def simulate_input(s):
-            self.s.input_fct = lambda _: s
-
         # test empty
         self.s()
     
@@ -121,18 +118,10 @@ class StoryTests(unittest.TestCase):
         self.s.add_edge(bar, a)
         self.s.add_edge(foo, baz)
         
-        simulate_input('bar')
-        self.s()
-        self.assertTrue(self.s.current == bar)
-        simulate_input('nonsense')
-        self.s() 
-        self.assertTrue(self.s.current == bar)
-        simulate_input('baz')
-        self.s()
-        self.assertTrue(self.s.current == bar)
-        simulate_input('a')
-        self.s()
-        self.assertTrue(self.s.current == a)
+        inputs = iter(['bar', 'nonsense', 'baz', 'a'])
+        self.s.input_fct = lambda _: next(inputs) 
+        while not self.s.is_finished:
+            self.s()
 
     def test_dependencies(self):
         def foo():

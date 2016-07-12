@@ -206,6 +206,7 @@ class Story(nx.DiGraph):
         self.input_fct = input_fct 
         self._output_fct = None 
         self.output_fct = output_fct
+        self._is_finished = False
         # if dependencies:
         #     self.add_dependencies_from(dependencies) # TODO: keep track?
 
@@ -213,9 +214,7 @@ class Story(nx.DiGraph):
         """Runs one timestep the story
         """
         self._run_current()
-        if not self.is_finished():
-            next_node = self._get_next()
-            self.current = next_node if next_node else self._current
+        self.current = self._get_next()
 
     @property
     def current(self):
@@ -236,6 +235,10 @@ class Story(nx.DiGraph):
     @property
     def output_fct(self):
         return self._output_fct
+
+    @property
+    def is_finished(self):
+        return self._is_finished
 
     def arg_dict(self, n=None):
         """Gets the arg dict of node `n`. If not provided, defaults to current.
@@ -274,7 +277,9 @@ class Story(nx.DiGraph):
     def current(self, node):
         """Sets current to the provided node and adds node to visited
         """
-        if node in self:
+        if not node:
+            pass
+        elif node in self:
             self._current = node
             self._visited.add(node)
         else:
@@ -401,14 +406,6 @@ class Story(nx.DiGraph):
             ebunch_reversed.append(tuple(new_e))
         self.add_edges_from(ebunch_reversed, *args, **kwargs)
 
-    def is_finished(self):
-        """Check whether the story is finished (current is a leaf node)
-        """
-        if self._current:
-            return not super(Story, self).neighbors(self._current)
-        else:
-            return True
-
 ##########################################################################
 ####################### PRIVATE ##########################################
 ##########################################################################
@@ -416,17 +413,24 @@ class Story(nx.DiGraph):
     def _get_next(self):
         """Gets the next node from the user and returns the appropriate node
         """
-        neighbors = {f.__name__: f for f in self.neighbors(self._current)}
+        if not self._current:
+            return
+        elif not self.neighbors(self._current): # current is a leaf node
+            self._is_finished = True
+            return
 
-        user_inp = self._input_fct('Next? ') # TODO
-        if user_inp in neighbors:
-            node = neighbors[user_inp]
-            if self._is_runnable(node):
-                return self._select(node)
+        neighbors = {f.__name__: f for f in self.neighbors(self._current)}
+        
+        while True:
+            user_inp = self._input_fct('Next? ') # TODO
+            if user_inp in neighbors:
+                node = neighbors[user_inp]
+                if self._is_runnable(node):
+                    return self._select(node)
+                else:
+                    self.output_fct('Run conditions for [%s] not met' % node.__name__)
             else:
-                self.output_fct('Run conditions for [%s] not met' % node.__name__)
-        else:
-            self.output_fct('That is not a valid node')
+                self.output_fct('That is not a valid node')
                     
     def _select(self, node):
         """Selects a node to return based on the probability distrubtion
@@ -450,7 +454,7 @@ class Story(nx.DiGraph):
     def _run_current(self):
         """
         """
-        if not self._current:
+        if self._is_finished or not self._current:
             return 
 
         c = self._context
