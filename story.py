@@ -214,8 +214,6 @@ class Story(nx.DiGraph):
                               sort of output 
         """
         super(Story, self).__init__()
-        # self._node_dict = {} # maps callable to StoryNode
-        # self.add_node(start)
         self._current = None
         self._visited = set()
         self._context = {}
@@ -345,15 +343,31 @@ class Story(nx.DiGraph):
         elif start:
             raise StoryError('Start is already set')
 
-    def add_dependency(self, u, v):
-        """
-        """ 
+    def add_nodes_from(self, nodes, arg_dict=None, run_conditions=None,
+                       dynamic_events=None):
         raise NotImplementedError('TODO')
 
+    def add_dependency(self, u, v):
+        """Adds a dependency from u to v. That is to say, going to u depends
+        on v having been visited already
+        """ 
+        condition = lambda: v in self._visited
+        self.run_conditions(u).append(condition)
+
     def add_dependencies_from(self, d):
+        """Add dependencies from a nested dict describing a dependency tree. 
+        Leaf nodes represent base dependencies upon which nodes at higher levels
+        depend
         """
-        """
-        raise NotImplementedError('TODO')
+        if not d:
+            return
+
+        for k, v in d.iteritems():
+            if v:
+                for sub_k in v:
+                    self.add_dependency(k, sub_k)
+
+        self.add_dependencies_from(v)
 
     def add_edge(self, u, v, *args, **kwargs):
         """If `u` and `v` aren't StoryNodes, convert them first then add the 

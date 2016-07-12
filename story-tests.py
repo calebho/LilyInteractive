@@ -59,6 +59,34 @@ class StoryTests(unittest.TestCase):
             self.assertTrue(fct2 in self.s.neighbors(fct1))
             self.assertFalse(fct1 in self.s.neighbors(fct2))
 
+    def test_add_undir_edge(self):
+        a = 'not callable'
+        b = 'also not callable'
+        with self.assertRaises(AssertionError):
+            self.s.add_undirected_edge(a, b)
+        
+        f1 = lambda: None
+        f2 = lambda: None 
+        self.s.add_undirected_edge(f1, f2)
+        self.assertTrue(f1 in self.s)
+        self.assertTrue(f2 in self.s)
+        self.assertTrue(f1 in self.s and f2 in self.s)
+        self.assertTrue(f2 in self.s.neighbors(f1))
+        self.assertTrue(f1 in self.s.neighbors(f2))
+        
+        g1 = lambda: None 
+        g2 = lambda: None 
+        h1 = lambda: None 
+        h2 = lambda: None 
+        ebunch = [(g1, g2), (h1, h2)]
+        self.s.add_undirected_edges_from(ebunch)
+        for fct1, fct2 in ebunch:
+            self.assertTrue(fct1 in self.s)
+            self.assertTrue(fct2 in self.s)
+            self.assertTrue(fct2 in self.s.neighbors(fct1))
+            self.assertTrue(fct1 in self.s.neighbors(fct2))
+
+
     def test_run(self):
         # test empty
         self.s()
@@ -73,41 +101,43 @@ class StoryTests(unittest.TestCase):
         self.s.input_fct = lambda _: 'bar'
         self.s()
 
-    # def test_add_undir_edge(self):
-    #     a = 'not callable'
-    #     b = 'also not callable'
-    #     with self.assertRaises(AssertionError):
-    #         self.s.add_undirected_edge(a, b)
-    #     
-    #     f1 = lambda: None
-    #     f2 = lambda: None 
-    #     n2 = StoryNode(f2)
-    #     self.s.add_undirected_edge(f1, n2)
-    #     n1 = self.s.get_node(f1)
-    #     self.assertTrue(n1 in self.s)
-    #     self.assertTrue(n2 in self.s)
-    #     # print self.s.nodes()
-    #     # print self.s.edges()
-    #     self.assertTrue(n1 in self.s and n2 in self.s)
-    #     self.assertTrue(n2 in self.s.neighbors(n1))
-    #     self.assertTrue(n1 in self.s.neighbors(n2))
-    #     
-    #     g1 = lambda: None 
-    #     g2 = lambda: None 
-    #     h1 = lambda: None 
-    #     h2 = lambda: None 
-    #     ebunch = [(g1, g2), (h1, h2)]
-    #     self.s.add_undirected_edges_from(ebunch)
-    #     for fct1, fct2 in ebunch:
-    #         n1 = self.s.get_node(fct1)
-    #         n2 = self.s.get_node(fct2)
-    #         self.assertTrue(n1 in self.s)
-    #         self.assertTrue(n2 in self.s)
-    #         self.assertTrue(n2 in self.s.neighbors(n1))
-    #         self.assertTrue(n1 in self.s.neighbors(n2))
+    def test_dependencies(self):
+        def foo():
+            pass
+        def bar():
+            pass
+        def baz():
+            pass
 
+        for f in [foo, bar, baz]:
+            self.s.add_node(f)
 
+        d = {baz: {bar: {foo: None}}}
+        self.s.add_dependencies_from(d)
+        for condition in self.s.run_conditions(foo):
+            self.assertTrue(condition())
+        for condition in self.s.run_conditions(bar):
+            self.assertFalse(condition())
+        for condition in self.s.run_conditions(baz):
+            self.assertFalse(condition())
 
+        self.s.current = foo
+
+        for condition in self.s.run_conditions(foo):
+            self.assertTrue(condition())
+        for condition in self.s.run_conditions(bar):
+            self.assertTrue(condition())
+        for condition in self.s.run_conditions(baz):
+            self.assertFalse(condition())
+
+        self.s.current = bar
+
+        for condition in self.s.run_conditions(foo):
+            self.assertTrue(condition())
+        for condition in self.s.run_conditions(bar):
+            self.assertTrue(condition())
+        for condition in self.s.run_conditions(baz):
+            self.assertTrue(condition())
 
 class StoryNodeTests(unittest.TestCase):
     
