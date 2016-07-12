@@ -345,7 +345,9 @@ class Story(nx.DiGraph):
 
     def add_nodes_from(self, nodes, arg_dict=None, run_conditions=None,
                        dynamic_events=None):
-        raise NotImplementedError('TODO')
+        for node in nodes:
+            self.add_node(node, arg_dict=arg_dict, run_conditions=run_conditions,
+                          dynamic_events=dynamic_events)
 
     def add_dependency(self, u, v):
         """Adds a dependency from u to v. That is to say, going to u depends

@@ -14,7 +14,7 @@ class StoryTests(unittest.TestCase):
     def tearDown(self):
         del self.s
 
-    def test_add(self):
+    def test_add_node(self):
         with self.assertRaises(AssertionError):
             self.s.add_node('s')
     
@@ -25,6 +25,17 @@ class StoryTests(unittest.TestCase):
             self.s.add_node(bar, start=True)
         self.s.add_node(bar)
         self.assertTrue(bar in self.s)
+
+        def a():
+            pass
+        def b():
+            pass
+        def c():
+            pass
+        f_list = [a, b, c]
+        self.s.add_nodes_from(f_list)
+        for f in f_list:
+            self.assertTrue(f in self.s)
 
     def test_context(self):
         d = {'a': 1, 'b': 2}
