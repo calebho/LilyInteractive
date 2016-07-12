@@ -17,33 +17,27 @@ def get_choices(s, valid_choices):
 
     return to_ret
 
-def movie_greeting(p):
+def movie_greeting(name):
     """The greeting to the movie theater
-
-    Parameters:
-    p {dict} The player dict
     """
     text = "Hello! Welcome to the Lehigh Valley Movie Theater. "
     text += "You can go to the box office and get your ticket "
     text += "or you can go to the concessions for some snacks. "
-    text += "Where would you like to go %s?" % p['name']
+    text += "Where would you like to go %s?" % name
     text = wrap_text(text, "GoodNews")
     speak(text)
 
-def box_office(p):
-    """Movie selection. Adds the key `movie choice` to `p`
-
-    Parameters:
-    p {dict} The player dict
+def box_office(movie_names):
+    """Movie selection. 
     """
     text = "Welcome to the box office. Which movie would you like to watch?"
     text += "We have tickets for "
-    text += englishify(p['movie names'])
+    text += englishify(movie_names)
     text = wrap_text(text, "GoodNews")
     speak(text)
 
     inp = getInputString()
-    movie_choice = get_choices(inp, p['movie names'])
+    movie_choice = get_choices(inp, movie_names) 
     while len(movie_choice) != 1:
         if not movie_choice:
             speak(wrap_text("Sorry we don't have tickets for that movie.",
@@ -68,14 +62,11 @@ def box_office(p):
     text = wrap_text(text, "GoodNews")
     speak(text)
 
-    p['movie choice'] = movie_choice[0]
+    return {'movie_choice': movie_choice}
 
-def concessions(p):
-    """Getting snacks. Adds the key `bought` to `p`
-
-    Parameters:
+def concessions(menu):
+    """Getting snacks. 
     """
-    menu = p['menu']
     bought = []
     text = "What can I get for you? We have " # what if user says nothing?
     text += englishify(menu)
@@ -98,26 +89,25 @@ def concessions(p):
     text = wrap_text(text, "GoodNews")
     speak(text)
 
-    p['bought'] = bought
+    return {'bought': bought}
 
-def ticket_checker(p):
+def ticket_checker(movie_choice):
     """Checks the user's ticket and gives directions to the corresponding
     theater
     """
-    movie_name = p['movie choice']
     text = "Hello, ticket please! "
-    if movie_name == "inside out":
+    if movie_choice == "inside out":
         text += "Inside Out is in theater 3 A, enjoy the show! "
-    if movie_name == "tomorrowland":
+    if movie_choice == "tomorrowland":
         text += "Tomorrowland is in theater 1 D, enjoy your movie! "
-    if movie_name == "minions":
+    if movie_choice == "minions":
         text += "Minions is in theater 3 B, enjoy the show! "
-    if movie_name == "home":
+    if movie_choice == "home":
         text += "Home is in theater 1 A, enjoy your movie! "
     text = wrap_text(text, "GoodNews")
     speak(text)
 
-def watch_movie(p):
+def watch_movie(movie_choice):
     """Plays the movie
     """
     # TODO
