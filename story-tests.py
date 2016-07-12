@@ -26,19 +26,6 @@ class StoryTests(unittest.TestCase):
         self.s.add_node(bar)
         self.assertTrue(bar in self.s)
 
-
-    # def test_get(self):
-    #     with self.assertRaises(AssertionError):
-    #         self.s.get_node('not a callable')
-
-    #     with self.assertRaises(StoryError):
-    #         foo = lambda: None 
-    #         self.s.get_node(foo)
-
-    #     foo = lambda: None 
-    #     foo_node = self.s.add_node(foo)
-    #     self.assertTrue(self.s.get_node(foo) == foo_node)
-    
     def test_context(self):
         d = {'a': 1, 'b': 2}
         self.s.context = d
