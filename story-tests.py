@@ -161,6 +161,18 @@ class StoryTests(unittest.TestCase):
         for condition in self.s.run_conditions(baz):
             self.assertTrue(condition())
 
+    def test_verify(self):
+        def foo(name):
+            pass
+        self.s.add_node(foo)
+        self.s.update_context({'incorrect_name_key': 'Bob'})
+        with self.assertRaises(RuntimeWarning):
+            self.s.verify()
+    
+        # map the parameter to foo, `name`, to `incorrect_name_key`
+        self.s.node[foo]['arg_dict']['name'] = 'incorrect_name_key'
+        self.s.verify()
+
 class StoryNodeTests(unittest.TestCase):
     
     def setUp(self):

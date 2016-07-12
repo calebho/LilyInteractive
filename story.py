@@ -406,9 +406,25 @@ class Story(nx.DiGraph):
             ebunch_reversed.append(tuple(new_e))
         self.add_edges_from(ebunch_reversed, *args, **kwargs)
 
+    def verify(self):
+        """Does some simple checks to see whether the story is well formed
+        """
+        self._verify_arg_dict()
+        # TODO: check for circular dependencies?
+
 ##########################################################################
 ####################### PRIVATE ##########################################
 ##########################################################################
+
+    def _verify_arg_dict(self):
+        """Checks for any key errors in the arg_dict without running the 
+        story
+        """
+        for node in self:
+            arg_dict = self.arg_dict(node)
+            for arg, c_key in arg_dict.iteritems():
+                if c_key not in self._context:
+                    raise RuntimeWarning('%s is not a valid context key' % c_key)
 
     def _get_next(self):
         """Gets the next node from the user and returns the appropriate node
