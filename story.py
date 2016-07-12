@@ -318,7 +318,9 @@ class Story(nx.DiGraph):
                               nodes are selected 
         """
         assert hasattr(c, '__call__'), '%s is not callable' % str(c)
-        if not arg_dict: arg_dict = {}
+        if not arg_dict:
+            args, _, _, _ = inspect.getargspec(c)
+            arg_dict = {arg: arg for arg in args}
         if not run_conditions: run_conditions = []
         if not dynamic_events: dynamic_events = {}
         super(Story, self).add_node(c, arg_dict=arg_dict, 
@@ -334,11 +336,15 @@ class Story(nx.DiGraph):
         for node in nodes:
             assert hasattr(node, '__call__'), '%s is not callable' % str(node)
 
-        if not arg_dict: arg_dict = {}
         if not run_conditions: run_conditions = []
         if not dynamic_events: dynamic_events = {}
-        super(Story, self).add_nodes_from(nodes, arg_dict=arg_dict, 
-                run_conditions=run_conditions, dynamic_events=dynamic_events)
+        super(Story, self).add_nodes_from(nodes, run_conditions=run_conditions,
+                dynamic_events=dynamic_events)
+        if not arg_dict:
+            for node in nodes:
+                args, _, _, _ = inspect.getargspec(node)
+                self.node[node]['arg_dict'] = {arg: arg for arg in args}
+
 
     def add_dependency(self, u, v):
         """Adds a dependency from u to v. That is to say, going to u depends
