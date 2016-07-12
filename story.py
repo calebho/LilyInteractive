@@ -226,6 +226,13 @@ class Story(nx.DiGraph):
         # if dependencies:
         #     self.add_dependencies_from(dependencies) # TODO: keep track?
 
+    def __call__(self):
+        """Runs one timestep the story
+        """
+        self._run_current()
+        if not self.is_finished():
+            self.current = self._get_next()
+
     @property
     def current(self):
         return self._current
@@ -294,7 +301,7 @@ class Story(nx.DiGraph):
         self._context = copy(d)
 
     def update_context(self, d):
-        """
+        """Adds the keys and values in dict `d` to the context dict
         """
         for k, v in d.iteritems():
             self._context[k] = v
@@ -338,77 +345,6 @@ class Story(nx.DiGraph):
         elif start:
             raise StoryError('Start is already set')
 
-    def _get_next(self):
-        """Gets the next node from the user and returns the appropriate node
-        """
-        neighbors = {f.__name__: f for f in self.neighbors(self._current)}
-
-        while True:
-            user_inp = self._input_fct('Next? ') # TODO
-            if user_inp in neighbors:
-                node = neighbors[user_inp]
-                if self._is_runnable(node):
-                    return self._select(node)
-                else:
-                    print('Run conditions for [%s] not met' % node.__name__)
-            else:
-                print('That is not a valid node')
-                    
-    def _select(self, node):
-        """Selects a node to return based on the probability distrubtion
-        given by `dynamic_events`
-        """
-        dynamic_events = self.dynamic_events(node)
-        if dynamic_events:
-            d_items = zip(*dynamic_events.items())
-            nodes = list(d_items[0])
-            p_dist = list(d_items[1])
-            # add node to occupy leftover probability 
-            if sum(p_dist) < 1:
-                nodes.append(node)
-                p_dist.append(1. - sum(p_dist))
-            sample = list(multinomial(1, p_dist))
-            
-            return nodes[sample.index(1)]
-        else:
-            return node
-
-    def __call__(self):
-        """Runs one timestep the story
-        """
-        self._run_current()
-        if not self.is_finished():
-            self.current = self._get_next()
-
-    def _run_current(self):
-        """
-        """
-        if not self._current:
-            return 
-
-        c = self._context
-        arg_dict = self.arg_dict() 
-        kwargs = \
-            {arg_name: c[c_key] for arg_name, c_key in arg_dict.iteritems()}
-        ret_val = self._current(**kwargs)
-        if ret_val:
-            self.update_context(ret_val)
-
-    def _is_runnable(self, n):
-        """Checks whether the run conditions are satisifed for node `n` 
-        """
-        return self._check_conditions(self.run_conditions(n))
-
-    def _check_conditions(self, l):
-        """Helper for is_runnable
-        """
-        if not l:
-            return True 
-        elif len(l) == 1:
-            return l[0]()
-        else:
-            return l[0]() and self._check_conditions(l[1:])
-    
     def add_dependency(self, u, v):
         """
         """ 
@@ -472,3 +408,72 @@ class Story(nx.DiGraph):
         """
         """
         raise NotImplementedError('TODO')
+    
+##########################################################################
+####################### PRIVATE ##########################################
+##########################################################################
+
+    def _get_next(self):
+        """Gets the next node from the user and returns the appropriate node
+        """
+        neighbors = {f.__name__: f for f in self.neighbors(self._current)}
+
+        while True:
+            user_inp = self._input_fct('Next? ') # TODO
+            if user_inp in neighbors:
+                node = neighbors[user_inp]
+                if self._is_runnable(node):
+                    return self._select(node)
+                else:
+                    print('Run conditions for [%s] not met' % node.__name__)
+            else:
+                print('That is not a valid node')
+                    
+    def _select(self, node):
+        """Selects a node to return based on the probability distrubtion
+        given by `dynamic_events`
+        """
+        dynamic_events = self.dynamic_events(node)
+        if dynamic_events:
+            d_items = zip(*dynamic_events.items())
+            nodes = list(d_items[0])
+            p_dist = list(d_items[1])
+            # add node to occupy leftover probability 
+            if sum(p_dist) < 1:
+                nodes.append(node)
+                p_dist.append(1. - sum(p_dist))
+            sample = list(multinomial(1, p_dist))
+            
+            return nodes[sample.index(1)]
+        else:
+            return node
+
+    def _run_current(self):
+        """
+        """
+        if not self._current:
+            return 
+
+        c = self._context
+        arg_dict = self.arg_dict() 
+        kwargs = \
+            {arg_name: c[c_key] for arg_name, c_key in arg_dict.iteritems()}
+        ret_val = self._current(**kwargs)
+        if ret_val:
+            self.update_context(ret_val)
+
+    def _is_runnable(self, n):
+        """Checks whether the run conditions are satisifed for node `n` 
+        """
+        return self._check_conditions(self.run_conditions(n))
+
+    def _check_conditions(self, l):
+        """Helper for is_runnable
+        """
+        if not l:
+            return True 
+        elif len(l) == 1:
+            return l[0]()
+        else:
+            return l[0]() and self._check_conditions(l[1:])
+    
