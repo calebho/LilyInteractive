@@ -3,28 +3,41 @@ import zoo_actions as actions
 
 from story import Story, StoryNode
 
+def get_remaining():
+    """Create and return a list of exhibits not visited yet
+    """
+
 def zoo_story_factory():
-    entrance = StoryNode("entrance", actions.entrance)
-    parking_lot = StoryNode("parking lot", actions.parking_lot)
-    monkeys = StoryNode("monkeys", actions.monkeys)
-    elephants = StoryNode("elephants", actions.elephants)
-    lions = StoryNode("lions", actions.lions)
-    tigers = StoryNode("tigers", actions.tigers)
-    penguins = StoryNode("penguins", actions.penguins)
-    otters = StoryNode("otters", actions.otters)
-    pandas = StoryNode("pandas", actions.pandas)
+    s = Story()
+    s.add_node(actions.entrance, start=True)
+    s.add_node(actions.wallet)
+    s.add_node(actions.parking_lot)
 
-    exhibits = [monkeys, elephants, lions, tigers, penguins, otters, pandas]
+    exhibits = [actions.monkeys, actions.elephants, actions.lions, 
+                actions.tigers, actions.penguins, actions.otters, 
+                actions.pandas]
     exhibits = random.sample(exhibits, 4)
-
-    zoo_story = Story(entrance)
-    dir_edges = [(entrance, exhibit) for exhibit in exhibits]
-    dir_edges += [(exhibit, parking_lot) for exhibit in exhibits]
+    for exhibit in exhibits:
+        s.add_node(exhibit)
+    
+    dir_edges = [(actions.entrance, exhibit) for exhibit in exhibits]
+    dir_edges += [(exhibit, actions.parking_lot) for exhibit in exhibits]
+    dir_edges.append((actions.wallet, actions.parking_lot))
     undir_edges = []
+    # the exhibits are fully connected
     for i, v in enumerate(exhibits):
         for w in exhibits[i+1:]:
             undir_edges.append((v, w))
-    zoo_story.add_edges_from(dir_edges)
-    zoo_story,add_undirected_edges_from(undir_edges)
+    s.add_edges_from(dir_edges)
+    s.add_undirected_edges_from(undir_edges)
 
-    return zoo_story
+    s.node[actions.entrance]['dynamic_events'][actions.wallet] = 0.01
+
+    context = {'name': None,
+               'remaining': [e.__name__ for e in exhibits]}
+    s.update_context(context)
+
+    return s
+
+if __name__ == '__main__':
+    zoo_story_factory()
