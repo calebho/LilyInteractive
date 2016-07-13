@@ -410,11 +410,18 @@ class Story(nx.DiGraph):
         """Does some simple checks to see whether the story is well formed
         """
         self._verify_arg_dict()
+        self._check_current()
         # TODO: check for circular dependencies?
 
 ##########################################################################
 ####################### PRIVATE ##########################################
 ##########################################################################
+    
+    def _check_current(self):
+        """Checks that current is set 
+        """
+        if not self._current:
+            raise RuntimeWarning('Current is `None`')
 
     def _verify_arg_dict(self):
         """Checks for any key errors in the arg_dict without running the 
