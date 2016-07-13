@@ -47,6 +47,21 @@ def parse_choices(s, examples):
 
     return choices
 
+def are_similar(s, *examples, t=0.7):
+    """Given a sentence `s` and an arbitrary number of example sentences,
+    check the similarity between `s` and the example sentences
+
+    Paramters:
+    s {str|unicode} The sentence to compare
+    *examples {str|unicode} The sentences against which `s` is compared 
+    t {float} The similarity score lower bound
+
+    Returns: {bool} True if the similarity score between `s` and at least one
+    example sentence is greater than `t`; False otherwise
+    """
+
+
+
 def main():
     food_sents = [u'I want popcorn and soda',
                   u'popcorn, candy, and chocolate',
