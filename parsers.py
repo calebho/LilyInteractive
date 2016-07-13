@@ -59,8 +59,13 @@ def are_similar(s, *examples, t=0.7):
     Returns: {bool} True if the similarity score between `s` and at least one
     example sentence is greater than `t`; False otherwise
     """
+    s = NLP(unicode(s))
+    for ex in examples:
+        ex_doc = NLP(unicode(ex))
+        if s.similarity(ex_doc) >= t:
+            return True
 
-
+    return False
 
 def main():
     food_sents = [u'I want popcorn and soda',
