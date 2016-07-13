@@ -1,13 +1,6 @@
 from movie_story import movie_story_factory
+from zoo_story import zoo_story_factory
 from story import StoryError
-
-# movie story elements
-MOVIE_LIST = ["inside out", "tomorrowland", "minions", "home"]
-MENU = ["soda", "popcorn", "candy"]
-
-# zoo story elements
-EXHIBITS = ["monkeys", "elephants", "lions", "otters", "pandas", "tigers",
-            "penguins"]
 
 def get_name():
     """Gets the user's name
@@ -18,41 +11,21 @@ def get_story():
     """Gets a story choice from the user and returns the appropriate Story object
     and player dict
     """
-    story_choice = 'movie'
+    story_choice = raw_input('which story? ').strip()
     if story_choice == 'movie':
         s = movie_story_factory()
-        player = {'name': get_name(),
-                  'movie names': MOVIE_LIST,
-                  'menu': MENU,
-                  'bought': None,
-                  'movie choice': None}
     elif story_choice == 'zoo':
         s = zoo_story_factory()
-        player = {'name': get_name(),
-                  'exhibits': EXHIBITS,
-                  'next': None}
     elif story_choice == 'pet store':
         pass
 
-    return s, player
+    return s
 
 def main():
-    s, player = get_story()
-
-    s.current(player)
-    node_dict = s.get_nodes_by_name()
-    while not s.is_finished():
-        print 'current:', s.current
-        next_node = raw_input('Next node? ')
-        if next_node.strip() in node_dict:
-            try:
-                s.current = node_dict[next_node]
-                s.current(player)
-            except StoryError as e:
-                print str(e)
-        else:
-            print '%s is not a valid node' % next_node
-
+    s = get_story()
+    s.update_context({'name': get_name()})
+    while not s.is_finished:
+        s()
 
 main()
 
