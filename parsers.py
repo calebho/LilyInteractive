@@ -28,7 +28,7 @@ def parse(s, workspace_id):
     workspace_id {str} The ID corresponding to the workspace created for 
                        any given storyline 
 
-    Returns: {str} The response if the parse was successful
+    Returns: {dict} The response if the parse was successful
     """
     response = convo.message(workspace_id=workspace_id, message_input={'text': s})
     # print(json.dumps(response, indent=2))
