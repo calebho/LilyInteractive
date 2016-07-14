@@ -2,7 +2,7 @@ import webbrowser
 # import win32com.client
 import time
 
-from parsers import parse, get_entities
+from parsers import parse, get_entities, get_intent
 from speech_recog import getInputString, getInputStringMultiple
 from text_to_speech import speak, wrap_text, englishify
 
@@ -32,6 +32,7 @@ def movie_greeting(name):
 def box_office(movie_names):
     """Movie selection. 
     """
+    movie_names = [movie.lower() for movie in movie_names]
     text = "Welcome to the box office. Which movie would you like to watch? "
     text += "We have tickets for %s" % englishify(movie_names)
     text = wrap_text(text, "GoodNews")
@@ -40,12 +41,8 @@ def box_office(movie_names):
     while True:
         inp = getInputString()
         resp = parse(inp, WKSPACE_ID)
-        try: 
-            entities = get_entities(resp, 'buy_ticket')
-        except RuntimeError:
-            e_msg = "Sorry, I didn't understand what you said. Could you try rephrasing?"
-            speak(wrap_text(e_msg, "Apology"))
-        else:
+        if get_intent(resp) == 'buy_ticket':
+            entities = get_entities(resp)
             movie_choice = entities[0]
             if movie_choice in movie_names:
                 break
@@ -54,6 +51,9 @@ def box_office(movie_names):
                         % movie_choice
                 msg += "Please choose another movie to watch."
                 speak(wrap_text(msg, "Apology"))
+        else:
+            e_msg = "Sorry, I didn't understand what you said. Could you try rephrasing?"
+            speak(wrap_text(e_msg, "Apology"))
 
     text = "Here's your ticket. Enjoy the show. "
     text += "Would you like to go to the concessions or the ticket checker?"
@@ -65,23 +65,46 @@ def box_office(movie_names):
 def concessions(menu):
     """Getting snacks. 
     """
+    menu = [item.lower() for item in menu]
     bought = []
-    text = "What can I get for you? We have " # what if user says nothing?
+    text = "What can I get for you? We have " 
     text += englishify(menu)
     text = wrap_text(text, "GoodNews")
     speak(text)
 
     while True:
-        inp = getInputString() # TODO: handle multiple inputs?
-        if "no" in inp.lower():
+        inp = getInputString() 
+        resp = parse(inp, WKSPACE_ID)
+        intent = get_intent(resp)
+        if intent == 'order_food':
+            # print('in order_food')
+            entities = get_entities(resp)
+            missing = []
+            available = []
+            for item in entities:
+                if item not in menu:
+                    missing.append(item)
+                elif item not in bought:
+                    available.append(item)
+                    bought.append(item)
+            missing_msg = "" 
+            if missing:
+                missing_msg = "Sorry we don't have %s on our menu. "\
+                        % englishify(missing, conj=False)
+                missing_msg = wrap_text(msg, 'Apology')
+                # print(missing_msg)
+            msg = "I'll get some %s for you. " % englishify(available)
+            msg += "Can I get you anything else?" 
+            speak(missing_msg + wrap_text(msg, 'GoodNews'))
+        elif intent == 'done_ordering':
+            # print('done ordering')
             break
-        item_choices = get_choices(inp, menu)
-        for item in item_choices:
-            if item not in bought:
-                bought.append(item)
-        speak(wrap_text("Can I get anything else for you?", "GoodNews"))
-
-    text = "Thank you. "
+        else:
+            # print('misunderstanding')
+            msg = "I'm sorry, I didn't understand what you said. Could you rephrase?"
+            speak(wrap_text(msg, 'Apology'))
+            
+    text = "Thank you. Here's your %s. " % englishify(bought)
     text += "If you do not have your ticket yet, go to the box office."
     text += "Otherwise, you can go to the ticket checker."
     text = wrap_text(text, "GoodNews")
@@ -93,6 +116,7 @@ def ticket_checker(movie_choice):
     """Checks the user's ticket and gives directions to the corresponding
     theater
     """
+    # MOVED TO WATCH MOVIE
     text = "Hello, ticket please! "
     if movie_choice == "inside out":
         text += "Inside Out is in theater 3 A, enjoy the show! "
@@ -108,7 +132,19 @@ def ticket_checker(movie_choice):
 def watch_movie(movie_choice):
     """Plays the movie
     """
-    # TODO
+    text = "Hello, ticket please! "
+    if movie_choice == "inside out":
+        text += "Inside Out is in theater 3 A, enjoy the show! "
+    if movie_choice == "tomorrowland":
+        text += "Tomorrowland is in theater 1 D, enjoy your movie! "
+    if movie_choice == "minions":
+        text += "Minions is in theater 3 B, enjoy the show! "
+    if movie_choice == "home":
+        text += "Home is in theater 1 A, enjoy your movie! "
+    text = wrap_text(text, "GoodNews")
+    speak(text)
+    
+    # TODO: need to play the movie
     return
 
     movie_name = p['movie choice']
@@ -140,9 +176,10 @@ def fullscreen(length):
     time.sleep(length)
     win32com.client.Dispatch("WScript.Shell").SendKeys('f')
     win32com.client.Dispatch("WScript.Shell").SendKeys('%{F4}',0)
-
+    
 def main():
-    movie_greeting('Caleb')
+    menu = ['popcorn', 'Soda', 'canDy']
+    concessions(menu)
 
 if __name__ == '__main__':
     main()
