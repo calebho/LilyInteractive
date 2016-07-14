@@ -1,11 +1,17 @@
 import json
 
 from watson_developer_cloud import ConversationV1
+from timeout import timeout_decorate, TimeoutError
+
+ConversationV1.message = timeout_decorate(ConversationV1.message, seconds=5)
 
 convo = ConversationV1(version='2016-07-11',
                        url="https://gateway.watsonplatform.net/conversation/api",
                        username='a183c3b3-538c-41ae-912e-6a4694261279',
                        password='XgEzF4MENrKf')
+
+class ParseError(Exception):
+    pass 
 
 def get_intent(response, t=0.8):
     """Given a response, get the intent with the highest confidence and return
@@ -30,10 +36,20 @@ def parse(s, workspace_id):
 
     Returns: {dict} The response if the parse was successful
     """
-    response = convo.message(workspace_id=workspace_id, message_input={'text': s})
+    response = None
+    for i in range(3): 
+        try:
+            response = convo.message(workspace_id=workspace_id, message_input={'text': s})
+        except TimeoutError:
+            print('Timeout %d occured' % i)
+        else:
+            break
+    
     # print(json.dumps(response, indent=2))
-    return response
-
+    if response:
+        return response
+    else:
+        raise ParseError('No response received')
 
 def main():
     w_id = "569456a8-facf-431d-a963-493d905b77ea" # Movie workspace
