@@ -1,4 +1,4 @@
-from speech_recog import getInputString
+from speech_recog import get_input
 from text_to_speech import speak, wrap_text, englishify
 import random
 # from run_gif import *
@@ -65,7 +65,7 @@ def penguins(remaining):
         text += "Great timing. They are feeding the penguins. "
         text += "Should we stay and watch? "
         speak(wrap_text(text, 'GoodNews'))
-        s = getInputString() # TODO: can probably abstract to using story input fct
+        s = get_input() # TODO: can probably abstract to using story input fct
         # if player.get_target(s, yes, yes_syns) == 'yes':
             # runGif("ZooGifs/penguin_feeding.gif")
         text = "Which animal do you want to see now? "
@@ -82,7 +82,7 @@ def tigers(remaining):
         text += "There are baby tigers too! "
         text += "Do you want to look? "
         speak(wrap_text(text, 'GoodNews'))
-        s = getInputString()
+        s = get_input()
         # if player.get_target(s, yes, yes_syns) == 'yes':
             # runGif("ZooGifs/baby_tiger.gif")
         text = "What exhibit should we go to from here? "
@@ -98,7 +98,7 @@ def otters(remaining):
     if x < 0.4:
         text += "Look! There is a special great white shark exhibit! "
         text += "Do you want to stop? "
-        s = getInputString()
+        s = get_input()
         speak(wrap_text(text, 'GoodNews'))
         # if player.get_target(s, yes, yes_syns) == 'yes':
             # runGif("ZooGifs/white_shark_feeding.gif")
