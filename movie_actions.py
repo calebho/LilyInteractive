@@ -2,9 +2,11 @@ import webbrowser
 # import win32com.client
 import time
 
-# from parsers import parse_choices
+from parsers import parse, get_entities
 from speech_recog import getInputString, getInputStringMultiple
 from text_to_speech import speak, wrap_text, englishify
+
+WKSPACE_ID = "569456a8-facf-431d-a963-493d905b77ea" 
 
 # TODO: NAIVE!!!
 def get_choices(s, valid_choices):
@@ -30,32 +32,28 @@ def movie_greeting(name):
 def box_office(movie_names):
     """Movie selection. 
     """
-    text = "Welcome to the box office. Which movie would you like to watch?"
-    text += "We have tickets for "
-    text += englishify(movie_names)
+    text = "Welcome to the box office. Which movie would you like to watch? "
+    text += "We have tickets for %s" % englishify(movie_names)
     text = wrap_text(text, "GoodNews")
     speak(text)
-
-    inp = getInputString()
-    movie_choice = get_choices(inp, movie_names) 
-    while len(movie_choice) != 1:
-        if not movie_choice:
-            speak(wrap_text("Sorry we don't have tickets for that movie.",
-                            "Apology"))
-        elif len(movie_choice) > 1:
-            speak(wrap_text("Please choose only one movie"))
-        movie_choice = get_choices(inp, movie_names)
-    # while True:
-    #     try:
-    #         choices = parse_choices(movie_choice, "I'd like to watch Minions")
-    #     except RuntimeError:
-    #         speak("I'm sorry, I didn't understand that")
-    #     if len(choices) == 1:
-    #         speak("Please pick one movie to watch")
-    #     elif choices[0].lower() in movie_names:
-    #         break
-    #     else:
-    #         speak("Sorry we don't have tickets for %s" % choices[0])
+    
+    while True:
+        inp = getInputString()
+        resp = parse(inp, WKSPACE_ID)
+        try: 
+            entities = get_entities(resp, 'buy_ticket')
+        except RuntimeError:
+            e_msg = "Sorry, I didn't understand what you said. Could you try rephrasing?"
+            speak(wrap_text(e_msg, "Apology"))
+        else:
+            movie_choice = entities[0]
+            if movie_choice in movie_names:
+                break
+            else:
+                msg = "Sorry, we're not currently showing %s at the moment. "\
+                        % movie_choice
+                msg += "Please choose another movie to watch."
+                speak(wrap_text(msg, "Apology"))
 
     text = "Here's your ticket. Enjoy the show. "
     text += "Would you like to go to the concessions or the ticket checker?"
