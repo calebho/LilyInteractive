@@ -8,17 +8,6 @@ from text_to_speech import speak, wrap_text, englishify
 
 WKSPACE_ID = "569456a8-facf-431d-a963-493d905b77ea" 
 
-# TODO: NAIVE!!!
-def get_choices(s, valid_choices):
-    """
-    """
-    to_ret = []
-    for choice in valid_choices:
-        if choice.lower() in s.lower():
-            to_ret.append(choice)
-
-    return to_ret
-
 def movie_greeting(name):
     """The greeting to the movie theater
     """
