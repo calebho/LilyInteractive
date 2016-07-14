@@ -10,6 +10,10 @@ convo = ConversationV1(version='2016-07-11',
 def get_entities(response, intent):
     """
     """
+    if response['intents'][0]['intent'] == intent: # get intent w/ highest confidence
+        return [entity['value'].lower() for entity in response['entities']]
+    else:
+        raise RuntimeError('Non-matching intents')
 
 def parse(s, workspace_id):
     """Parse a string `s`
@@ -22,6 +26,7 @@ def parse(s, workspace_id):
     Returns: {str} The response if the parse was successful
     """
     response = convo.message(workspace_id=workspace_id, message_input={'text': s})
+    # print(json.dumps(response, indent=2))
     return response
 
 
