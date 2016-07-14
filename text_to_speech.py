@@ -4,14 +4,19 @@ import time
 
 from StringIO import StringIO
 from watson_developer_cloud import TextToSpeechV1
+from timeout import timeout_decorate, TimeoutError
 
 # define enter/exit methods for use in a context manager
 StringIO.__enter__ = lambda self: self
 StringIO.__exit__ = lambda self, e_type, e_val, tb: self.close()
 
+TextToSpeechV1.synthesize = timeout_decorate(TextToSpeechV1.synthesize, seconds=5)
 tts = TextToSpeechV1(username='68819f91-e8a5-49e3-b284-3b66ed470bb9',
                      password='1tkAyaLoSdhm')
 wf = None # the wave file
+
+class SpeechError(Exception):
+    pass
 
 def callback(in_data, frame_count, time_info, status):
     """pyaudio callback
@@ -23,8 +28,18 @@ def speak(s):
     """Do TTS on a string `s`
     """
     global wf
+    
+    audio = None
+    for i in range(3):
+        try:
+            audio = tts.synthesize(s, accept='audio/wav', voice='en-US_AllisonVoice')
+        except TimeoutError:
+            print('Timemout %d occured' % i)
+        else:
+            break
+    if not audio:
+        raise SpeechError('No response received')
 
-    audio = tts.synthesize(s, accept='audio/wav', voice='en-US_AllisonVoice')
     with StringIO(audio) as f:
         wf = wave.open(f, 'rb')
         p = pyaudio.PyAudio()
