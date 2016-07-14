@@ -7,13 +7,18 @@ convo = ConversationV1(version='2016-07-11',
                        username='a183c3b3-538c-41ae-912e-6a4694261279',
                        password='XgEzF4MENrKf')
 
-def get_entities(response, intent):
+def get_intent(response):
+    """Given a response, get the intent with the highest confidence and return
+    it if the confidence exceeds 0.5
     """
+    intent = response['intents'][0]
+    if intent['confidence'] > 0.5:
+        return intent['intent']
+
+def get_entities(response):
+    """Given a response, get and return the entities extracted.
     """
-    if response['intents'][0]['intent'] == intent: # get intent w/ highest confidence
-        return [entity['value'].lower() for entity in response['entities']]
-    else:
-        raise RuntimeError('Non-matching intents')
+    return [entity['value'].lower() for entity in response['entities']]
 
 def parse(s, workspace_id):
     """Parse a string `s`
