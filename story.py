@@ -4,6 +4,7 @@ import networkx as nx
 import random
 import inspect 
 
+from parsers import parse, get_intent
 from numpy.random import multinomial
 from copy import copy
 
@@ -44,7 +45,7 @@ class Story(nx.DiGraph):
     """The Story class represented as a directed graph.
     """
 
-    def __init__(self, input_fct=None, output_fct=None):
+    def __init__(self, input_fct=None, output_fct=None, workspace_id=None):
         """Constructor for Story
 
         Parameters:
@@ -52,6 +53,7 @@ class Story(nx.DiGraph):
                              and returns a str 
         output_fct {callable} A callable that accepts a str and produces some
                               sort of output 
+        workspace_id {str} The Watson Conversation workspace ID
         """
         super(Story, self).__init__()
         self._current = None
@@ -62,6 +64,8 @@ class Story(nx.DiGraph):
         self._output_fct = None 
         self.output_fct = output_fct
         self._is_finished = False
+
+        self.workspace_id = workspace_id
         # if dependencies:
         #     self.add_dependencies_from(dependencies) # TODO: keep track?
 
@@ -300,15 +304,26 @@ class Story(nx.DiGraph):
         neighbors = {f.__name__: f for f in self.neighbors(self._current)}
         
         while True:
-            user_inp = self._input_fct('Next? ') # TODO
-            if user_inp in neighbors:
-                node = neighbors[user_inp]
+            user_inp = self._input_fct() # TODO
+            if self.workspace_id: # try to get intention from natural language
+                resp = parse(user_inp, self.workspace_id)
+                # intents that control node movement should match node names
+                intent = get_intent(resp) 
+            else: # otherwise use direct matching
+                intent = user_inp
+
+            if intent in neighbors:
+                node = neighbors[intent]
                 if self._is_runnable(node):
                     return self._select(node)
                 else:
-                    self.output_fct('Run conditions for [%s] not met' % node.__name__)
+                    # replace underscores w/ spaces
+                    intent_str = ' '.join(intent.split('_')) 
+                    msg = "You can't go to the %s yet" % intent_str # TODO: THIS SUCKS
+                    self.output_fct(msg)
             else:
-                self.output_fct('That is not a valid node')
+                msg = "I'm sorry, I don't understand what you mean. Could you rephrase?"
+                self.output_fct(msg)
                     
     def _select(self, node):
         """Selects a node to return based on the probability distrubtion
