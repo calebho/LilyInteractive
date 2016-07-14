@@ -7,12 +7,12 @@ convo = ConversationV1(version='2016-07-11',
                        username='a183c3b3-538c-41ae-912e-6a4694261279',
                        password='XgEzF4MENrKf')
 
-def get_intent(response):
+def get_intent(response, t=0.8):
     """Given a response, get the intent with the highest confidence and return
-    it if the confidence exceeds 0.5
+    it if the confidence exceeds `t`
     """
     intent = response['intents'][0]
-    if intent['confidence'] > 0.5:
+    if intent['confidence'] > t:
         return intent['intent']
 
 def get_entities(response):
