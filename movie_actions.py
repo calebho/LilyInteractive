@@ -3,7 +3,7 @@ import webbrowser
 import time
 
 from parsers import parse, get_entities, get_intent
-from speech_recog import getInputString, getInputStringMultiple
+from speech_recog import get_input
 from text_to_speech import speak, wrap_text, englishify
 
 WKSPACE_ID = "569456a8-facf-431d-a963-493d905b77ea" 
@@ -28,7 +28,7 @@ def box_office(movie_names):
     speak(text)
     
     while True:
-        inp = getInputString()
+        inp = get_input()
         resp = parse(inp, WKSPACE_ID)
         if get_intent(resp) == 'buy_ticket':
             entities = get_entities(resp)
@@ -45,7 +45,7 @@ def box_office(movie_names):
             speak(wrap_text(e_msg, "Apology"))
 
     text = "Here's your ticket. Enjoy the show. "
-    text += "Would you like to go to the concessions or the ticket checker?"
+    text += "Would you like to go to the concessions or the auditorium?"
     text = wrap_text(text, "GoodNews")
     speak(text)
 
@@ -62,7 +62,7 @@ def concessions(menu):
     speak(text)
 
     while True:
-        inp = getInputString() 
+        inp = get_input() 
         resp = parse(inp, WKSPACE_ID)
         intent = get_intent(resp)
         if intent == 'order_food':
@@ -95,30 +95,13 @@ def concessions(menu):
             
     text = "Thank you. Here's your %s. " % englishify(bought)
     text += "If you do not have your ticket yet, go to the box office."
-    text += "Otherwise, you can go to the ticket checker."
+    text += "Otherwise, you can go to the auditorium."
     text = wrap_text(text, "GoodNews")
     speak(text)
 
     return {'bought': bought}
 
-def ticket_checker(movie_choice):
-    """Checks the user's ticket and gives directions to the corresponding
-    theater
-    """
-    # MOVED TO WATCH MOVIE
-    text = "Hello, ticket please! "
-    if movie_choice == "inside out":
-        text += "Inside Out is in theater 3 A, enjoy the show! "
-    if movie_choice == "tomorrowland":
-        text += "Tomorrowland is in theater 1 D, enjoy your movie! "
-    if movie_choice == "minions":
-        text += "Minions is in theater 3 B, enjoy the show! "
-    if movie_choice == "home":
-        text += "Home is in theater 1 A, enjoy your movie! "
-    text = wrap_text(text, "GoodNews")
-    speak(text)
-
-def watch_movie(movie_choice):
+def auditorium(movie_choice):
     """Plays the movie
     """
     text = "Hello, ticket please! "
