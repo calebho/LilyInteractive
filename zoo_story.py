@@ -1,7 +1,7 @@
 import random
 import zoo_actions as actions
 
-from story import Story, StoryNode
+from story import Story
 
 def get_remaining():
     """Create and return a list of exhibits not visited yet
