@@ -2,9 +2,10 @@ import random
 import zoo_actions as actions
 
 from story import Story
+from speech_recog import get_input
 
 def zoo_story_factory():
-    s = Story(workspace_id=actions.WKSPACE_ID)
+    s = Story(input_fct=get_input, workspace_id=actions.WKSPACE_ID)
     s.add_node(actions.entrance, start=True)
     s.add_node(actions.wallet)
     s.add_node(actions.parking_lot)

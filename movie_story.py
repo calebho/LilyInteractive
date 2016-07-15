@@ -1,11 +1,12 @@
 import movie_actions as actions
 
 from story import Story 
+from speech_recog import get_input
 
 def movie_story_factory():
     """Create and return the movie story
     """
-    s = Story(workspace_id=actions.WKSPACE_ID)
+    s = Story(input_fct=get_input, workspace_id=actions.WKSPACE_ID)
     s.add_node(actions.movie_greeting, start=True)
     s.add_node(actions.box_office)
     s.add_node(actions.concessions)
