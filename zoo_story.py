@@ -3,12 +3,8 @@ import zoo_actions as actions
 
 from story import Story
 
-def get_remaining():
-    """Create and return a list of exhibits not visited yet
-    """
-
 def zoo_story_factory():
-    s = Story()
+    s = Story(workspace_id=actions.WKSPACE_ID)
     s.add_node(actions.entrance, start=True)
     s.add_node(actions.wallet)
     s.add_node(actions.parking_lot)

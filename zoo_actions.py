@@ -1,10 +1,11 @@
+import random
+
 from speech_recog import get_input
 from text_to_speech import speak, wrap_text, englishify
-import random
+from parsers import parse, get_intent
 # from run_gif import *
 
-yes = ['yes']
-yes_syns = [['yes', 'yup', 'yeah', 'yea', 'indeed', 'sure']]
+WKSPACE_ID = "353e9ff8-49d9-4f7e-b3ba-7d9eda2702ea"
 
 def entrance(name, remaining):
     """Greeting node
@@ -65,9 +66,7 @@ def penguins(remaining):
         text += "Great timing. They are feeding the penguins. "
         text += "Should we stay and watch? "
         speak(wrap_text(text, 'GoodNews'))
-        s = get_input() # TODO: can probably abstract to using story input fct
-        # if player.get_target(s, yes, yes_syns) == 'yes':
-            # runGif("ZooGifs/penguin_feeding.gif")
+        watch("ZooGifs/penguin_feeding.gif")
         text = "Which animal do you want to see now? "
     else:
         text += "Which animal do you want to see now? "
@@ -82,9 +81,7 @@ def tigers(remaining):
         text += "There are baby tigers too! "
         text += "Do you want to look? "
         speak(wrap_text(text, 'GoodNews'))
-        s = get_input()
-        # if player.get_target(s, yes, yes_syns) == 'yes':
-            # runGif("ZooGifs/baby_tiger.gif")
+        watch("ZooGifs/baby_tiger.gif")
         text = "What exhibit should we go to from here? "
     else:
         text += "What exhibit should we go to from here? "
@@ -98,10 +95,8 @@ def otters(remaining):
     if x < 0.4:
         text += "Look! There is a special great white shark exhibit! "
         text += "Do you want to stop? "
-        s = get_input()
         speak(wrap_text(text, 'GoodNews'))
-        # if player.get_target(s, yes, yes_syns) == 'yes':
-            # runGif("ZooGifs/white_shark_feeding.gif")
+        watch("ZooGifs/white_shark_feeding.gif")
         text = "Which animal do you want to see next? "
     else:
         text += "Which animal do you want to see next? "
@@ -131,3 +126,26 @@ def update_remaining(l, f_name):
         prompts = ["We've seen everything, but you're welcome to go back to any exhibit"]
     return random.choice(prompts)
 
+def watch(f):
+    """Ask whether the use wants to stay and watch. If yes, play the gif at `f`,
+    else do nothing
+    """
+    while True:
+        inp = get_input() 
+        resp = parse(inp, WKSPACE_ID)
+        intent = get_intent(resp)
+        if intent == 'watch':
+            print('watching %s' % f) # TODO: TEMPORARY
+            # runGif(f)
+            return
+        elif intent  == 'no_watch':
+            return
+        else:
+            msg = "I'm sorry I don't understand what you said. Could you rephrase?"
+            speak(wrap_text(msg, 'Apology'))
+
+def main():
+    otters([])
+
+if __name__ == '__main__':
+    main()
