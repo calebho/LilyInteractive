@@ -4,7 +4,6 @@ import networkx as nx
 import random
 import inspect 
 
-from functools import wraps
 from parsers import parse, get_intent
 from numpy.random import multinomial
 from copy import copy
@@ -242,35 +241,6 @@ class Story(nx.DiGraph):
                 new_e.append(edge[2])
             ebunch_reversed.append(tuple(new_e))
         self.add_edges_from(ebunch_reversed, *args, **kwargs)
-    
-    def add_run_condition(self, node, condition, fail_func=None):
-        """Add a run condition to node `node`
-
-        Parameters:
-        node {str} A node in the graph
-        condition {callable} A bool function that checks some condition
-        fail_func {callable} What to do when `condition` returns False. Should
-                             take the same parameters as `condition`
-        """
-        if node not in self:
-            raise StoryError('Node [%s] does not exist' % node)
-        if not hasattr(condition, '__call__'):
-            raise StoryError('Condition passed is not a callable')
-        if fail_func and not hasattr(fail_func, '__call__'):
-            raise StoryError('Fail function passed it not a callable')
-
-        def fail_decorate(f):
-            @wraps(f)
-            def wrapper(*args, **kwargs):
-                result = f(*args, **kwargs)
-                if not result and fail_func: # f returned False
-                    fail_func(*args, **kwargs)
-                return result
-            return wrapper
-
-        condition = fail_decorate(condition)
-        self.node[node]['run_conditions'].append(condition)
-
 
     def verify(self):
         """Does some simple checks to see whether the story is well formed
