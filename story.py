@@ -44,9 +44,6 @@ class StoryError(Exception):
 class Story(nx.DiGraph):
     """The Story class represented as a directed graph.
     """
-    _node_attributes = {'actions': [],
-                        'dynamic_events': {},
-                        'run_conditions': []}
 
     def __init__(self, input_fct=None, output_fct=None, workspace_id=None):
         """Constructor for Story
@@ -67,7 +64,6 @@ class Story(nx.DiGraph):
         self._output_fct = None 
         self.output_fct = output_fct
         self._is_finished = False
-        self._actions = {}
 
         self.workspace_id = workspace_id
         # if dependencies:
@@ -103,18 +99,17 @@ class Story(nx.DiGraph):
     def is_finished(self):
         return self._is_finished
 
-    # def arg_dict(self, n=None):
-    #     """Gets the arg dict of node `n`. If not provided, defaults to current.
-    #     If current is not set, returns an empty dict
-    #     """
-    #     if n:
-    #         return self.node[n]['arg_dict']
-    #     elif self._current:
-    #         return self.node[self._current]['arg_dict']
-    #     else:
-    #         return {}
+    def arg_dict(self, n=None):
+        """Gets the arg dict of node `n`. If not provided, defaults to current.
+        If current is not set, returns an empty dict
+        """
+        if n:
+            return self.node[n]['arg_dict']
+        elif self._current:
+            return self.node[self._current]['arg_dict']
+        else:
+            return {}
 
-    # TODO: might not be very useful
     def run_conditions(self, n=None):
         """Gets the run conditions list of node `n`. If not provided, defaults
         to current. If current is not set, returns an empty list
@@ -173,19 +168,47 @@ class Story(nx.DiGraph):
         else:
             self._output_fct = print
 
-    def add_node(self, s): 
+    def add_node(self, c, arg_dict=None, run_conditions=None, 
+                 dynamic_events=None, start=False):
         """Adds a node to the story 
 
         Parameters:
-        s {str} The name of the node
+        c {callable} A callable representing an specific action in the story
+        arg_dict {dict} The arguments to `action` mapped to the keys in
+                        `story.context`. Defaults to the identity map 
+        run_conditions {list} A list of callables returning truth-values 
+        dynamic_events {dict} A dict of StoryNode:float representing the 
+                              probability distribution according to which 
+                              nodes are selected 
         """
-        super(Story, self).add_node(str(s), attr_dict=_node_attributes)
+        assert hasattr(c, '__call__'), '%s is not callable' % str(c)
+        if not arg_dict:
+            args, _, _, _ = inspect.getargspec(c)
+            arg_dict = {arg: arg for arg in args}
+        if not run_conditions: run_conditions = []
+        if not dynamic_events: dynamic_events = {}
+        super(Story, self).add_node(c, arg_dict=arg_dict, 
+                                    run_conditions=run_conditions, 
+                                    dynamic_events=dynamic_events)
+        if start and not self._current:
+            self.current = c
+        elif start:
+            raise StoryError('Start is already set')
 
-    def add_nodes_from(self, nodes):
-        """Given a list of nodes, add them to the graph
-        """
-        nodes = [str(node) for node in nodes]
-        super(Story, self).add_nodes_from(nodes, attr_dict=_node_attributes)
+    def add_nodes_from(self, nodes, arg_dict=None, run_conditions=None,
+                       dynamic_events=None):
+        for node in nodes:
+            assert hasattr(node, '__call__'), '%s is not callable' % str(node)
+
+        if not run_conditions: run_conditions = []
+        if not dynamic_events: dynamic_events = {}
+        super(Story, self).add_nodes_from(nodes, run_conditions=run_conditions,
+                dynamic_events=dynamic_events)
+        if not arg_dict:
+            for node in nodes:
+                args, _, _, _ = inspect.getargspec(node)
+                self.node[node]['arg_dict'] = {arg: arg for arg in args}
+
 
     def add_dependency(self, u, v):
         """Adds a dependency from u to v. That is to say, going to u depends
@@ -210,19 +233,19 @@ class Story(nx.DiGraph):
         self.add_dependencies_from(v)
 
     def add_edge(self, u, v, *args, **kwargs):
-        """Given nodes u and v, add them to the graph if necessary and add an
-        edge between them
+        """If `u` and `v` aren't StoryNodes, convert them first then add the 
+        edge 
         """
-        super(Story, self).add_edge(str(u), str(v), *args, **kwargs)
+        assert hasattr(u, '__call__'), '%s is not callable' % str(u)
+        assert hasattr(v, '__call__'), '%s is not callable' % str(v)
+        super(Story, self).add_edge(u, v, *args, **kwargs)
 
     def add_edges_from(self, ebunch, *args, **kwargs):
-        """Given a list of edges `ebunch`, add them to the graph
+        """Similar to add edge, convert nodes to StoryNodes first 
         """
-        for i, edge in enumerate(ebunch):
-            edge = list(edge)
-            edge[0], edge[1] = str(edge[0]), str(edge[1])
-            edge = tuple(edge)
-            ebunch[i] = edge
+        for e in ebunch:
+            assert hasattr(e[0], '__call__'), '%s is not callable' % str(e[0])
+            assert hasattr(e[1], '__call__'), '%s is not callable' % str(e[1])
 
         super(Story, self).add_edges_from(ebunch, *args, **kwargs)
 
