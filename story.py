@@ -304,10 +304,30 @@ class Story(nx.DiGraph):
         self._check_current()
         # TODO: check for circular dependencies?
 
+    def add_say(self, node, message=None):
+        """Add an action to node `node` that outputs `message`
+        """
+        action = {'type': 'say', 'kwargs': {'message': message}}
+        self.node[node]['actions'].append(action)
+
+    def add_listen(self, node):
+        """Add an action to node `node` that asks for user input 
+        """
+        action = {'type': 'listen', 'kwargs': None}
+        self.node[node]['actions'].append(action)
+
+    def add_play(self, node, filename=None):
+        """Add an action to node `node` that plays/shows the media file at
+        `filename`
+        """
+        action = {'type': 'play', 'kwargs': {'filename': filename}}
+        self.node[node]['actions'].append(action)
+
+
 ##########################################################################
 ####################### PRIVATE ##########################################
 ##########################################################################
-    
+
     def _check_current(self):
         """Checks that current is set 
         """
