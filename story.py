@@ -187,52 +187,28 @@ class Story(nx.DiGraph):
         """
         nodes = [str(node) for node in nodes]
         super(Story, self).add_nodes_from(nodes, attr_dict=_node_attributes)
-    
-    def require_visit(self, u, *nodes):
-        """Add a run condition to `u` that requires nodes in `nodes` to be 
-        visited beforehand
+
+    def add_dependency(self, u, v):
+        """Adds a dependency from u to v. That is to say, going to u depends
+        on v having been visited already
+        """ 
+        condition = lambda: v in self._visited
+        self.run_conditions(u).append(condition)
+
+    def add_dependencies_from(self, d):
+        """Add dependencies from a nested dict describing a dependency tree. 
+        Leaf nodes represent base dependencies upon which nodes at higher levels
+        depend
         """
-        unvisited = []
-        def check(*nodes):
-            for node in nodes:
-                if node not in self._visited:
-                    unvisited.append(node)
-            if unvisited:
-                # TODO: output something useful
-                return False
-            else:
-                return True
+        if not d:
+            return
 
-        self.node[node]['run_conditions'].append(check)
+        for k, v in d.iteritems():
+            if v:
+                for sub_k in v:
+                    self.add_dependency(k, sub_k)
 
-        # def fail_fct():
-        #     # TODO: say unvisited nodes
-        #     pass
-
-        # self.add_run_condition(u, check, fail_fct)
-        
-
-    # def add_dependency(self, u, v):
-    #     """Adds a dependency from u to v. That is to say, going to u depends
-    #     on v having been visited already
-    #     """ 
-    #     condition = lambda: v in self._visited
-    #     self.run_conditions(u).append(condition)
-
-    # def add_dependencies_from(self, d):
-    #     """Add dependencies from a nested dict describing a dependency tree. 
-    #     Leaf nodes represent base dependencies upon which nodes at higher levels
-    #     depend
-    #     """
-    #     if not d:
-    #         return
-
-    #     for k, v in d.iteritems():
-    #         if v:
-    #             for sub_k in v:
-    #                 self.add_dependency(k, sub_k)
-
-    #     self.add_dependencies_from(v)
+        self.add_dependencies_from(v)
 
     def add_edge(self, u, v, *args, **kwargs):
         """Given nodes u and v, add them to the graph if necessary and add an
@@ -267,7 +243,6 @@ class Story(nx.DiGraph):
             ebunch_reversed.append(tuple(new_e))
         self.add_edges_from(ebunch_reversed, *args, **kwargs)
     
-    # TODO: might be unnecessary 
     def add_run_condition(self, node, condition, fail_func=None):
         """Add a run condition to node `node`
 
