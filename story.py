@@ -192,8 +192,8 @@ class Story(nx.DiGraph):
         """Add a run condition to `u` that requires nodes in `nodes` to be 
         visited beforehand
         """
-        unvisited = []
         def check(*nodes):
+            unvisited = []
             for node in nodes:
                 if node not in self._visited:
                     unvisited.append(node)
@@ -210,7 +210,35 @@ class Story(nx.DiGraph):
         #     pass
 
         # self.add_run_condition(u, check, fail_fct)
-        
+
+    def check_context_for(self, node, *args, **kwargs):
+        """Add a run condition to `node` that checks whether keys `args` exist
+        in the context and whether key-value pairs `kwargs` exist in the
+        context
+        """
+        def check(*args, **kwargs):
+            missing = []
+            for arg in args:
+                if arg not in self._context:
+                    missing.append(arg)
+            
+            wrong_values = []
+            for k, v in kwargs.iteritems():
+                if k in self._context:
+                    match = v == self._context[k]
+                    if not match:
+                        wrong_values.append((k, v))
+                else:
+                    missing.append(k)
+
+            if missing or wrong_values:
+                # TODO: output something useful
+                return False
+            else:
+                return True
+
+        self.node[node]['run_conditions'].append(check)
+
 
     # def add_dependency(self, u, v):
     #     """Adds a dependency from u to v. That is to say, going to u depends
