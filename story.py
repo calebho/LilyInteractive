@@ -273,25 +273,15 @@ class Story(nx.DiGraph):
         self._check_current()
         # TODO: check for circular dependencies?
 
-    def add_say(self, node, message=None):
-        """Add an action to node `node` that outputs `message`
+    def add_action(self, node, kind, **kwargs):
+        """Add an action of type `kind` to node `node` 
         """
-        action = {'type': 'say', 'kwargs': {'message': message}}
-        self.node[node]['actions'].append(action)
+        kind = kind.lower()
+        if kind not in ['say', 'listen', 'play']:
+            raise StoryError('That is not a valid action')
 
-    def add_listen(self, node):
-        """Add an action to node `node` that asks for user input 
-        """
-        action = {'type': 'listen', 'kwargs': None}
+        action = {'type': kind, 'kwargs': kwargs}
         self.node[node]['actions'].append(action)
-
-    def add_play(self, node, filename=None):
-        """Add an action to node `node` that plays/shows the media file at
-        `filename`
-        """
-        action = {'type': 'play', 'kwargs': {'filename': filename}}
-        self.node[node]['actions'].append(action)
-
 
 ##########################################################################
 ####################### PRIVATE ##########################################
