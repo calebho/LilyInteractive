@@ -1,0 +1,27 @@
+#:kivy 1.9.1
+
+<Button>:
+  font_size: dp(36)
+
+<HomeScreen>:
+  BoxLayout:
+    orientation: 'vertical'
+
+    Button:
+      text: 'Create a new story'
+    Button:
+      text: 'Edit an existing story'
+      on_press: root.manager.current = 'edit'
+    Button:
+      text: 'Quit'
+
+<EditScreen>:
+  BoxLayout:
+    orientation: 'vertical'
+
+    Button:
+      text: 'Save'
+    Button:
+      text: 'Home'
+      on_press: root.manager.current = 'home'
+
