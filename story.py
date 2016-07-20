@@ -181,41 +181,57 @@ class Story(nx.DiGraph):
                               probability distribution according to which 
                               nodes are selected 
         """
-        assert hasattr(c, '__call__'), '%s is not callable' % str(c)
-        if not arg_dict:
-            args, _, _, _ = inspect.getargspec(c)
-            arg_dict = {arg: arg for arg in args}
-        if not run_conditions: run_conditions = []
-        if not dynamic_events: dynamic_events = {}
-        super(Story, self).add_node(c, arg_dict=arg_dict, 
-                                    run_conditions=run_conditions, 
-                                    dynamic_events=dynamic_events)
-        if start and not self._current:
-            self.current = c
-        elif start:
-            raise StoryError('Start is already set')
-
-    def add_nodes_from(self, nodes, arg_dict=None, run_conditions=None,
-                       dynamic_events=None):
-        for node in nodes:
-            assert hasattr(node, '__call__'), '%s is not callable' % str(node)
-
-        if not run_conditions: run_conditions = []
-        if not dynamic_events: dynamic_events = {}
-        super(Story, self).add_nodes_from(nodes, run_conditions=run_conditions,
-                dynamic_events=dynamic_events)
-        if not arg_dict:
+        nodes = [str(node) for node in nodes]
+        super(Story, self).add_nodes_from(nodes, attr_dict=_node_attributes)
+    
+    def require_visit(self, u, *nodes):
+        """Add a run condition to `u` that requires nodes in `nodes` to be 
+        visited beforehand
+        """
+        def check(*nodes):
+            unvisited = []
             for node in nodes:
                 args, _, _, _ = inspect.getargspec(node)
                 self.node[node]['arg_dict'] = {arg: arg for arg in args}
 
 
-    def add_dependency(self, u, v):
-        """Adds a dependency from u to v. That is to say, going to u depends
-        on v having been visited already
-        """ 
-        condition = lambda: v in self._visited
-        self.run_conditions(u).append(condition)
+        # self.add_run_condition(u, check, fail_fct)
+
+    def check_context_for(self, node, *args, **kwargs):
+        """Add a run condition to `node` that checks whether keys `args` exist
+        in the context and whether key-value pairs `kwargs` exist in the
+        context
+        """
+        def check(*args, **kwargs):
+            missing = []
+            for arg in args:
+                if arg not in self._context:
+                    missing.append(arg)
+            
+            wrong_values = []
+            for k, v in kwargs.iteritems():
+                if k in self._context:
+                    match = v == self._context[k]
+                    if not match:
+                        wrong_values.append((k, v))
+                else:
+                    missing.append(k)
+
+            if missing or wrong_values:
+                # TODO: output something useful
+                return False
+            else:
+                return True
+
+        self.node[node]['run_conditions'].append(check)
+
+
+    # def add_dependency(self, u, v):
+    #     """Adds a dependency from u to v. That is to say, going to u depends
+    #     on v having been visited already
+    #     """ 
+    #     condition = lambda: v in self._visited
+    #     self.run_conditions(u).append(condition)
 
     def add_dependencies_from(self, d):
         """Add dependencies from a nested dict describing a dependency tree. 
