@@ -275,6 +275,12 @@ class Story(nx.DiGraph):
 
     def add_action(self, node, kind, **kwargs):
         """Add an action of type `kind` to node `node` 
+
+        Parameters:
+        node {str} The node the action is added to
+        kind {str} The type of action being added
+        kwargs {dict} The keyword arguments passed to the methods controlling
+                      the actions.
         """
         kind = kind.lower()
         if kind not in ['say', 'listen', 'play']:
@@ -356,18 +362,40 @@ class Story(nx.DiGraph):
             return node
 
     def _run_current(self):
-        """
+        """Run the current node
         """
         if self._is_finished or not self._current:
             return 
 
-        c = self._context
-        arg_dict = self.arg_dict() 
-        kwargs = \
-            {arg_name: c[c_key] for arg_name, c_key in arg_dict.iteritems()}
-        ret_val = self._current(**kwargs)
-        if ret_val:
-            self.update_context(ret_val)
+        for action in self.node[node]['actions']:
+            self._do(action)
+
+    def _do(self, action):
+        """
+        """
+        action_type = action['type']
+        kwargs = action['kwargs']
+        if action_type == 'say':
+            self._say(**kwargs)
+        elif action_type == 'listen':
+            self._listen(**kwargs)
+        elif action_type == 'play':
+            self._play(**kwargs)
+
+    def _say(self, message):
+        """Output message
+        """
+        raise NotImplementedError('TODO')
+
+    def _listen(self, intent):
+        """Get input and listen for intent
+        """
+        raise NotImplementedError('TODO')
+
+    def _play(self, filename):
+        """Play multimedia
+        """
+        raise NotImplementedError('TODO')
 
     def _is_runnable(self, n):
         """Checks whether the run conditions are satisifed for node `n` 
