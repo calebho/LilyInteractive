@@ -1,7 +1,30 @@
 #:kivy 1.9.1
 
-<Button>:
+<Button, Label>:
   font_size: dp(36)
+
+<BubbleButton>:
+  font_size: dp(24)
+
+<edit_menu>:
+  BubbleButton:
+    text: 'New story node'
+
+<StoryLabel>:
+  canvas.before:
+    Color:
+      rgba: 1, 1, 1, 1
+    Rectangle:
+      size: self.size
+  
+  size: self.parent.size
+  color: 0, 0, 0, 1
+  text: 'text'
+
+<StoryNode>:
+  size_hint: 0, 0
+  size: 100, 40
+  StoryLabel
 
 <HomeScreen>:
   BoxLayout:
@@ -17,11 +40,20 @@
 
 <EditScreen>:
   BoxLayout:
-    orientation: 'vertical'
-
-    Button:
-      text: 'Save'
+    size_hint: 1, 0.1
+    pos_hint: {'x': 0, 'y': .9}
+    
     Button:
       text: 'Home'
       on_press: root.manager.current = 'home'
+    Button:
+      text: 'Save'
+  
+  Board:
+    size_hint: 1, 0.9
+  # FloatLayout:
+  #   size_hint: 1, 0.9
 
+    # Scatter:
+    #   StoryLabel:
+    #     text: 'test'
