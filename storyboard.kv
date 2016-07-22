@@ -3,12 +3,16 @@
 <Button, Label>:
   font_size: dp(36)
 
+<EditMenuButton>:
+  font_size: dp(24)
+
 <EditMenu>:
   id: menu
   size_hint: 0, 0
-  size: dp(200), dp(120)
+  size: dp(200), dp(80)
   
-  EditMenuButton
+  EditMenuButton:
+    text: 'Add a story node'
   # Button:
   #   font_size: dp(24)
   #   text: 'New story node'
@@ -17,12 +21,12 @@
 <StoryLabel>:
   canvas.before:
     Color:
-      rgba: 1, 1, 1, 1
+      rgba: 0, 0, 0, 1
     Rectangle:
       size: self.size
   
   size: self.parent.size
-  color: 0, 0, 0, 1
+  color: 1, 1, 1, 1
   text: 'text'
 
 <StoryNode>:

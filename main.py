@@ -25,27 +25,28 @@ class EditMenuButton(BubbleButton):
 
     def on_release(self):
         if self.last_touch.button == 'left':
-            board = self.parent
-            print(self)
-            print(board)
+            menu = self.parent.parent
+            board = menu.board
+            n = StoryNode(do_scale=False, do_rotation=False)
+            n.center = menu.t_point
+            board.add_widget(n)
+
 
 class StoryLabel(Label):
     pass
 
 class StoryNode(Scatter):
-    def on_touch_up(self, touch):
-        super(StoryNode, self).on_touch_down(touch)
-        return True
+    pass
 
 class Board(FloatLayout):
     def __init__(self, **kwargs):
         super(Board, self).__init__(**kwargs)
-        self.edit_menu = EditMenu()
-        # self.add_widget(menu)
+        self.edit_menu = edit_menu = EditMenu()
+        edit_menu.board = self.proxy_ref
 
     def on_touch_up(self, touch):
         if self.collide_point(*touch.pos):
-            result = super(Board, self).on_touch_down(touch) # check children first
+            super(Board, self).on_touch_up(touch) # check children first
             print('button: %s' % touch.button)
             print('result:', result)
             print(self.edit_menu.collide_point(*touch.pos))
@@ -54,19 +55,14 @@ class Board(FloatLayout):
                 self.remove_widget(self.edit_menu)
             elif touch.button == 'right' and not self.edit_menu.collide_point(*touch.pos):
                 self.show_edit(touch)
-                self.touch = touch
             return True
 
     def show_edit(self, touch):
         self.edit_menu.x = touch.x - self.edit_menu.width / 2
         self.edit_menu.y = touch.y
+        self.edit_menu.t_point = touch.pos
         if not self.edit_menu.parent:
             self.add_widget(self.edit_menu)
-
-    def add_node(self):
-        n = StoryNode(do_scale=False, do_rotation=False)
-        n.center = self.touch.pos
-        self.add_widget(n)
 
 class HomeScreen(Screen):
     pass
