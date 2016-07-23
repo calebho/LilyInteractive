@@ -45,9 +45,6 @@ class StoryError(Exception):
 class Story(nx.DiGraph):
     """The Story class represented as a directed graph.
     """
-    _node_attributes = {'actions': [],
-                        'dynamic_events': {},
-                        'run_conditions': []}
 
     def __init__(self, input_fct=None, output_fct=None, workspace_id=None):
         """Constructor for Story
@@ -69,6 +66,9 @@ class Story(nx.DiGraph):
         self.output_fct = output_fct
         self._is_finished = False
         self._actions = {}
+        self._node_attributes = {'actions': [],
+                                 'dynamic_events': {},
+                                 'run_conditions': []}
 
         self.workspace_id = workspace_id
         # if dependencies:
@@ -180,13 +180,13 @@ class Story(nx.DiGraph):
         Parameters:
         s {str} The name of the node
         """
-        super(Story, self).add_node(str(s), attr_dict=_node_attributes)
+        super(Story, self).add_node(str(s), attr_dict=self._node_attributes)
 
     def add_nodes_from(self, nodes):
         """Given a list of nodes, add them to the graph
         """
         nodes = [str(node) for node in nodes]
-        super(Story, self).add_nodes_from(nodes, attr_dict=_node_attributes)
+        super(Story, self).add_nodes_from(nodes, attr_dict=self._node_attributes)
     
     def require_visit(self, u, *nodes):
         """Add a run condition to `u` that requires nodes in `nodes` to be 
