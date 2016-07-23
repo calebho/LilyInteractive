@@ -273,7 +273,20 @@ class Story(nx.DiGraph):
         self._check_current()
         # TODO: check for circular dependencies?
 
-    def add_action(self, node, kind, **kwargs):
+    def add_say(self, node, message):
+        self._add_action(node, 'say', message=message)
+
+    def add_listen(self, node, intent): # TODO: more parameters probably needed
+        self._add_action(node, 'listen', intent=intent)
+
+    def add_play(self, node, filename):
+        self._add_action(node, 'listen', filename=filename)
+
+##########################################################################
+####################### PRIVATE ##########################################
+##########################################################################
+
+    def _add_action(self, node, kind, **kwargs):
         """Add an action of type `kind` to node `node` 
 
         Parameters:
@@ -288,10 +301,6 @@ class Story(nx.DiGraph):
 
         action = {'type': kind, 'kwargs': kwargs}
         self.node[node]['actions'].append(action)
-
-##########################################################################
-####################### PRIVATE ##########################################
-##########################################################################
 
     def _check_current(self):
         """Checks that current is set 
@@ -385,12 +394,20 @@ class Story(nx.DiGraph):
     def _say(self, message):
         """Output message
         """
-        raise NotImplementedError('TODO')
+        self._output_fct(message)
 
     def _listen(self, intent):
         """Get input and listen for intent
         """
-        raise NotImplementedError('TODO')
+        while True:
+            inp = self._input_fct()
+            resp = parse(inp, self.workspace_id)
+            if get_intent(resp) == intent:
+                pass # TODO: what to do here?
+            else:
+                error_msg = "Sorry, I didn't understand what you said. " +\
+                        "Could you try rephrasing?"
+                self._output_fct(error_msg)
 
     def _play(self, filename):
         """Play multimedia
