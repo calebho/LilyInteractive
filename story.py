@@ -7,7 +7,7 @@ import inspect
 from functools import wraps
 from parsers import parse, get_intent
 from numpy.random import multinomial
-from copy import copy
+from copy import copy 
 
 def get_keys(d):
     """Recursively get the keys of a nested dictionary and return them as a set
@@ -66,9 +66,6 @@ class Story(nx.DiGraph):
         self.output_fct = output_fct
         self._is_finished = False
         self._actions = {}
-        self._node_attributes = {'actions': [],
-                                 'dynamic_events': {},
-                                 'run_conditions': []}
 
         self.workspace_id = workspace_id
         # if dependencies:
@@ -169,37 +166,48 @@ class Story(nx.DiGraph):
         Parameters:
         s {str} The name of the node
         """
-        super(Story, self).add_node(str(s), attr_dict=self._node_attributes)
+        node_attributes = {'actions': None,
+                           'dynamic_events': None,
+                           'run_conditions': None}
+        super(Story, self).add_node(str(s), **node_attributes)
 
     def add_nodes_from(self, nodes):
         """Given a list of nodes, add them to the graph
         """
         nodes = [str(node) for node in nodes]
-        super(Story, self).add_nodes_from(nodes, attr_dict=self._node_attributes)
+        node_attributes = {'actions': None,
+                           'dynamic_events': None,
+                           'run_conditions': None}
+        super(Story, self).add_nodes_from(nodes, **node_attributes)
     
     def require_visit(self, u, *nodes):
         """Add a run condition to `u` that requires nodes in `nodes` to be 
         visited beforehand
         """
-        unvisited = []
-        def check(*nodes):
+        def check():
+            # print('checking:', u)
+            # print('nodes:', nodes)
+            unvisited = []
             for node in nodes:
                 if node not in self._visited:
                     unvisited.append(node)
+            # print('unvisited:', unvisited)
             if unvisited:
                 # TODO: output something useful
                 return False
             else:
                 return True
 
-        self.node[node]['run_conditions'].append(check)
+        if not self.node[u]['run_conditions']:
+            self.node[u]['run_conditions'] = []
+        self.node[u]['run_conditions'].append(check)
 
     def check_context_for(self, node, *args, **kwargs):
         """Add a run condition to `node` that checks whether keys `args` exist
         in the context and whether key-value pairs `kwargs` exist in the
         context
         """
-        def check(*args, **kwargs):
+        def check():
             missing = []
             for arg in args:
                 if arg not in self._context:
@@ -220,6 +228,8 @@ class Story(nx.DiGraph):
             else:
                 return True
 
+        if not self.node[node]['run_conditions']:
+            self.node[node]['run_conditions'] = []
         self.node[node]['run_conditions'].append(check)
 
     def add_edge(self, u, v, *args, **kwargs):
@@ -289,6 +299,8 @@ class Story(nx.DiGraph):
             raise StoryError('That is not a valid action')
 
         action = {'type': kind, 'kwargs': kwargs}
+        if not self.node[node]['actions']:
+            self.node[node]['actions'] = []
         self.node[node]['actions'].append(action)
 
     def _check_current(self):
