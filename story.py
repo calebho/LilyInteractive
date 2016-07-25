@@ -104,17 +104,6 @@ class Story(nx.DiGraph):
     def is_finished(self):
         return self._is_finished
 
-    # def arg_dict(self, n=None):
-    #     """Gets the arg dict of node `n`. If not provided, defaults to current.
-    #     If current is not set, returns an empty dict
-    #     """
-    #     if n:
-    #         return self.node[n]['arg_dict']
-    #     elif self._current:
-    #         return self.node[self._current]['arg_dict']
-    #     else:
-    #         return {}
-
     # TODO: might not be very useful
     def run_conditions(self, n=None):
         """Gets the run conditions list of node `n`. If not provided, defaults
@@ -308,16 +297,6 @@ class Story(nx.DiGraph):
         if not self._current:
             raise RuntimeWarning('Current is `None`')
 
-    def _verify_arg_dict(self):
-        """Checks for any key errors in the arg_dict without running the 
-        story
-        """
-        for node in self:
-            arg_dict = self.arg_dict(node)
-            for arg, c_key in arg_dict.iteritems():
-                if c_key not in self._context:
-                    raise RuntimeWarning('%s is not a valid context key' % c_key)
-
     def _get_next(self):
         """Gets the next node from the user and returns the appropriate node
         """
@@ -327,28 +306,14 @@ class Story(nx.DiGraph):
             self._is_finished = True
             return
 
-        neighbors = {f.__name__: f for f in self.neighbors(self._current)}
-        
         while True:
             user_inp = self._input_fct() # TODO
-            if self.workspace_id: # try to get intention from natural language
-                resp = parse(user_inp, self.workspace_id)
-                # intents that control node movement should match node names
-                intent = get_intent(resp) 
-            else: # otherwise use direct matching
-                intent = user_inp
 
-            if intent in neighbors:
-                node = neighbors[intent]
-                if self._is_runnable(node):
-                    return self._select(node)
-                else:
-                    # replace underscores w/ spaces
-                    intent_str = ' '.join(intent.split('_')) 
-                    msg = "You can't go to the %s yet" % intent_str # TODO: THIS SUCKS
-                    self.output_fct(msg)
+            if user_inp in self.neighbors(self._current):
+                if self._is_runnable(user_inp): # will output something when False
+                    return self._select(user_inp)
             else:
-                msg = "I'm sorry, I don't understand what you mean. Could you rephrase?"
+                msg = "Sorry I can't go to %s" % user_inp
                 self.output_fct(msg)
                     
     def _select(self, node):
