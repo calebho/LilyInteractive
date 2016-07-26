@@ -1,6 +1,6 @@
 #:kivy 1.9.1
 
-<Button, Label>:
+<Button, Label, TextInput>:
   font_size: dp(20)
 
 <AddNodeForm>:
@@ -21,7 +21,6 @@
     TextInput:
       multiline: False
       on_text: form.fields['name'] = self.text
-      font_size: dp(20)
 
   GridLayout:
     size_hint: 1, 0.2
@@ -35,12 +34,37 @@
       text: 'Cancel'
       on_release: form.popup.dismiss()
   
-<AddNodePopup>:
-#   title: 'Add a story node'
-#   content: AddNodeForm() 
-#   size_hint: .8, .8
+<EditNodeForm>:
+  id: form
+  orientation: 'vertical'
+  
+  GridLayout:
+    size_hint: 1, 0.8
+    pos_hint: {'y': 0.2}
+    cols: 2
+    row_force_default: True
+    row_default_height: dp(40)
+    padding: map(dp, (10, 10))
+    spacing: map(dp, (0, 10))
 
+    Label:
+      text: 'Name'
+    TextInput:
+      multiline: False
+      on_text: form.fields['name'] = self.text
 
+  GridLayout:
+    size_hint: 1, 0.2
+    rows: 1
+    padding: map(dp, (10, 10))
+    spacing: map(dp, (0, 10))
+    Button:
+      text: 'Submit'
+      on_release: form.board.edit_node(**form.fields); form.popup.dismiss()
+    Button:
+      text: 'Cancel'
+      on_release: form.popup.dismiss()
+  
 <BubbleButton>:
   font_size: dp(16)
   size_hint: None, None
@@ -49,9 +73,6 @@
   halign: 'center'
   # valign: 'middle'
   padding_y: dp(5)
-
-<AddMenuButton@BubbleButton>
-<EditMenuButton@BubbleButton>
 
 <AddMenu>:
   id: menu
@@ -64,11 +85,14 @@
 
 <EditMenu>:
   size_hint: 0, 0
-  size: edit.size
+  size: edit.width + delete.width, edit.height
 
   EditMenuButton:
     id: edit
     text: 'Edit...'
+  DeleteButton:
+    id: delete
+    text: 'Delete'
 
 <StoryLabel>:
   canvas.before:

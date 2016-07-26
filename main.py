@@ -60,6 +60,15 @@ class AddMenuButton(BubbleButton):
             board = menu.board
             board.show_add_popup()
             
+class EditNodeForm(BoxLayout):
+
+    def __init__(self, **kwargs):
+        super(EditNodeForm, self).__init__(**kwargs)
+        self.fields = {}
+
+class EditNodePopup(Popup):
+    pass
+
 class EditMenu(Bubble):
     pass
 
@@ -73,7 +82,15 @@ class EditMenuButton(BubbleButton):
         if self.last_touch.button == 'left':
             menu = self.parent.parent
             board = menu.board
-            board.show_add_popup()
+            board.show_edit_popup()
+
+class DeleteButton(EditMenuButton):
+
+    def on_release(self):
+        if self.last_touch.button == 'left':
+            menu = self.parent.parent
+            board = menu.board
+            board.delete_node()
 
 class StoryLabel(Label):
 
@@ -88,17 +105,15 @@ class StoryLabel(Label):
         if touch.grab_current is self:
             touch.ungrab(self)
             board = self.parent.parent
+            touch.push()
+            touch.apply_transform_2d(self.to_window)
+            board.current_node = self.parent.proxy_ref
             board.show_edit(touch)
+            touch.pop()
             # print('released')
 
 class StoryNode(Scatter):
-
     pass
-    # def on_touch_up(self, touch):
-    #     super(StoryNode, self).on_touch_up(touch)
-    #     if self.collide_point(*touch.pos):
-    #         if touch.button == 'right':
-    #             print('right')
 
 class Board(FloatLayout):
     def __init__(self, **kwargs):
@@ -106,6 +121,8 @@ class Board(FloatLayout):
         self.add_menu = add_menu = AddMenu()
         add_menu.board = self.proxy_ref
         self.edit_menu = edit_menu = EditMenu()
+        edit_menu.board = self.proxy_ref
+        self.current_node = None
 
     def on_touch_up(self, touch):
         if self.collide_point(*touch.pos):
@@ -118,6 +135,7 @@ class Board(FloatLayout):
             elif touch.button == 'left':
                 # print('removing widget')
                 self.remove_widget(self.add_menu)
+                self.remove_widget(self.edit_menu)
             elif touch.button == 'right' and not self.add_menu.collide_point(*touch.pos):
                 self.show_add(touch)
             return True
@@ -130,11 +148,26 @@ class Board(FloatLayout):
             self.add_widget(self.add_menu)
 
     def show_edit(self, touch):
-
+        touch.apply_transform_2d(self.to_window)
+        # print(touch.pos)
+        # print('showing edit menu')
+        self.edit_menu.x = touch.x - self.edit_menu.width / 2
+        self.edit_menu.y = touch.y
+        if not self.edit_menu.parent:
+            self.add_widget(self.edit_menu)
 
     def show_add_popup(self):
         form = AddNodeForm()
         p = AddNodePopup(title='Add a story node',
+                content=form,
+                size_hint=(.4, .4))
+        form.popup = p.proxy_ref
+        form.board = self.proxy_ref
+        p.open()
+
+    def show_edit_popup(self):
+        form = EditNodeForm()
+        p = EditNodePopup(title='Edit a story node',
                 content=form,
                 size_hint=(.4, .4))
         form.popup = p.proxy_ref
@@ -149,6 +182,17 @@ class Board(FloatLayout):
             n.ids['label'].text = name
         self.add_widget(n)
 
+    def edit_node(self, name=None):
+        node = self.current_node
+        assert node, 'Current is none'
+        if name:
+            node.ids['label'].text = name
+        self.current_node = None
+
+    def delete_node(self):
+        node = self.current_node
+        assert node, 'Current is none'
+        self.remove_widget(node)
 
 class HomeScreen(Screen):
     pass
