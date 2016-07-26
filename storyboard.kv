@@ -1,22 +1,74 @@
 #:kivy 1.9.1
 
 <Button, Label>:
-  font_size: dp(36)
+  font_size: dp(20)
 
-<EditMenuButton>:
-  font_size: dp(24)
+<AddNodeForm>:
+  id: form
+  orientation: 'vertical'
+  
+  GridLayout:
+    size_hint: 1, 0.8
+    pos_hint: {'y': 0.2}
+    cols: 2
+    row_force_default: True
+    row_default_height: dp(40)
+    padding: map(dp, (10, 10))
+    spacing: map(dp, (0, 10))
 
-<EditMenu>:
+    Label:
+      text: 'Name'
+    TextInput:
+      multiline: False
+      on_text: form.fields['name'] = self.text
+      font_size: dp(20)
+
+  GridLayout:
+    size_hint: 1, 0.2
+    rows: 1
+    padding: map(dp, (10, 10))
+    spacing: map(dp, (0, 10))
+    Button:
+      text: 'Submit'
+      on_release: form.board.add_node(**form.fields); form.popup.dismiss()
+    Button:
+      text: 'Cancel'
+      on_release: form.popup.dismiss()
+  
+<AddNodePopup>:
+#   title: 'Add a story node'
+#   content: AddNodeForm() 
+#   size_hint: .8, .8
+
+
+<BubbleButton>:
+  font_size: dp(16)
+  size_hint: None, None
+  text_size: None, None
+  size: map(dp, self.texture_size)
+  halign: 'center'
+  # valign: 'middle'
+  padding_y: dp(5)
+
+<AddMenuButton@BubbleButton>
+<EditMenuButton@BubbleButton>
+
+<AddMenu>:
   id: menu
   size_hint: 0, 0
-  size: dp(200), dp(80)
+  size: add.size
   
+  AddMenuButton:
+    id: add
+    text: 'Add node'
+
+<EditMenu>:
+  size_hint: 0, 0
+  size: edit.size
+
   EditMenuButton:
-    text: 'Add a story node'
-  # Button:
-  #   font_size: dp(24)
-  #   text: 'New story node'
-  #   on_press: menu.parent.add_node()
+    id: edit
+    text: 'Edit...'
 
 <StoryLabel>:
   canvas.before:
@@ -27,12 +79,13 @@
   
   size: self.parent.size
   color: 1, 1, 1, 1
-  text: 'text'
+  # text: 'text'
 
 <StoryNode>:
   size_hint: 0, 0
-  size: 100, 40
-  StoryLabel
+  size: label.texture_size
+  StoryLabel:
+    id: label
 
 <HomeScreen>:
   BoxLayout:
@@ -48,8 +101,8 @@
 
 <EditScreen>:
   BoxLayout:
-    size_hint: 1, 0.1
-    pos_hint: {'x': 0, 'y': .9}
+    size_hint: 1, 0.075
+    pos_hint: {'x': 0, 'y': .925}
     
     Button:
       text: 'Home'
@@ -58,7 +111,8 @@
       text: 'Save'
   
   Board:
-    size_hint: 1, 0.9
+    id: board
+    size_hint: 1, 0.925
     
     canvas.before:
       Rectangle:
