@@ -65,7 +65,6 @@ class Story(nx.DiGraph):
         self._output_fct = None 
         self.output_fct = output_fct
         self._is_finished = False
-        self._actions = {}
 
         self.workspace_id = workspace_id
         # if dependencies:
@@ -100,6 +99,14 @@ class Story(nx.DiGraph):
     @property
     def is_finished(self):
         return self._is_finished
+
+    def get_actions(self, n=None):
+        if n:
+            return self.node[n]['actions']
+        elif self._current:
+            return self.node[self._current]['actions']
+        else:
+            return []
 
     # TODO: might not be very useful
     def run_conditions(self, n=None):
@@ -353,8 +360,9 @@ class Story(nx.DiGraph):
         if self._is_finished or not self._current:
             return 
 
-        for action in self.node[node]['actions']:
-            self._do(action)
+        if self.node[self._current]['actions']:
+            for action in self.node[self._current]['actions']:
+                self._do(action)
 
     def _do(self, action):
         """

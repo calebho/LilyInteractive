@@ -1,8 +1,8 @@
 import unittest
 import mock
 
-from story import Story, StoryError, get_keys, \
-                  get_value
+from story import Story, StoryError, get_keys, get_value
+from copy import copy
 
 class StoryTests(unittest.TestCase):
 
@@ -138,32 +138,28 @@ class StoryTests(unittest.TestCase):
         self.assertTrue(self.s.context == d)
         self.assertFalse(self.s.context is d)
 
-    '''
     def test_run(self):
         # test empty
         self.s()
-    
-        def foo():
-            pass
-        def bar():
-            pass
-        def baz():
-            pass
-        def a():
-            pass
-        self.s.add_node(foo, start=True)
-        self.s.add_node(bar)
-        self.s.add_node(baz)
-        self.s.add_node(a)
-        self.s.add_edge(foo, bar)
-        self.s.add_edge(bar, a)
-        self.s.add_edge(foo, baz)
-        
-        inputs = iter(['bar', 'nonsense', 'baz', 'a'])
-        self.s.input_fct = lambda _: next(inputs) 
-        while not self.s.is_finished:
-            self.s()
 
+        l = ['a', 'b', 'c', 'd']
+        self.s.add_nodes_from(l)
+        self.s.add_edge('a', 'b')
+        self.s.add_edge('a', 'c')
+        self.s.add_edge('c', 'd')
+        self.s.current = 'a'
+        
+        path = ['c', 'd']
+        path_iter = iter(path)
+        current = iter(path)
+        dummy_input = lambda: next(path_iter)
+        while not self.s.is_finished:
+            self.s.input_fct = dummy_input 
+            self.s()
+            self.assertTrue(self.s.current == next(current))
+
+
+    '''
     def test_verify(self):
         def foo(name):
             pass
