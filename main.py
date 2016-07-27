@@ -1,6 +1,10 @@
 from __future__ import print_function
 
 import inspect
+import cPickle as pickle
+# import pickle
+
+from story import Story, StoryError
 
 from kivy.config import Config
 # disable multitouch from mouse
@@ -20,8 +24,8 @@ from kivy.uix.scatter import Scatter
 from kivy.uix.popup import Popup
 from kivy.uix.textinput import TextInput
 from kivy.uix.button import Button
+from kivy.uix.filechooser import FileChooser
 
-# Builder.load_file("storyboard.kv")
 Window.size = map(dp, (1280, 720))
 
 # def inspect_wrap(f):
@@ -43,7 +47,10 @@ class AddNodeForm(BoxLayout):
         self.fields = {}
 
 class AddNodePopup(Popup):
-    pass
+
+    def __init__(self, **kwargs):
+        super(AddNodePopup, self).__init__(**kwargs)
+        self.fields = {}
 
 class AddMenu(Bubble):
     pass
@@ -59,6 +66,23 @@ class AddMenuButton(BubbleButton):
             menu = self.parent.parent
             board = menu.board
             board.show_add_popup()
+
+class EditMenu(Bubble):
+    pass
+
+
+class AddActionPopup(Popup):
+    pass
+
+class AddActionButton(BubbleButton):
+
+    def on_press(self):
+        if not self.last_touch.button == 'left':
+            self.state = 'normal'
+
+    def on_release(self):
+        if self.last_touch.button == 'left':
+            print('adding action')
             
 class EditNodeForm(BoxLayout):
 
@@ -67,9 +91,6 @@ class EditNodeForm(BoxLayout):
         self.fields = {}
 
 class EditNodePopup(Popup):
-    pass
-
-class EditMenu(Bubble):
     pass
 
 class EditMenuButton(BubbleButton):
@@ -84,7 +105,11 @@ class EditMenuButton(BubbleButton):
             board = menu.board
             board.show_edit_popup()
 
-class DeleteButton(EditMenuButton):
+class DeleteButton(BubbleButton):
+
+    def on_press(self):
+        if not self.last_touch.button == 'left':
+            self.state = 'normal'
 
     def on_release(self):
         if self.last_touch.button == 'left':
@@ -123,22 +148,40 @@ class Board(FloatLayout):
         self.edit_menu = edit_menu = EditMenu()
         edit_menu.board = self.proxy_ref
         self.current_node = None
+        self.story = Story()
+        self.current_file = None
 
-    def on_touch_up(self, touch):
+    def save_story(self, filename):
+        # TODO: check whether file exists already?
+        with open(filename, 'w') as f:
+            pickle.dump(self.story, f)
+            self.current_file = filename
+
+    def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
-            result = super(Board, self).on_touch_up(touch) # check children first
+            touch.grab(self)
+            print('grabbed board')
+            result = super(Board, self).on_touch_down(touch) # check children first
             # print('button: %s' % touch.button)
             # print('result:', result)
             # print(self.add_menu.collide_point(*touch.pos))
             if result:
                 return None
-            elif touch.button == 'left':
-                # print('removing widget')
-                self.remove_widget(self.add_menu)
-                self.remove_widget(self.edit_menu)
+            # elif touch.button == 'left':
+            #     # print('removing widget')
+            #     self.remove_widget(self.add_menu)
+            #     self.remove_widget(self.edit_menu)
             elif touch.button == 'right' and not self.add_menu.collide_point(*touch.pos):
                 self.show_add(touch)
             return True
+
+    def on_touch_up(self, touch):
+        if touch.grab_current is self:
+            touch.ungrab(self)
+            print('released board')
+            if touch.button == 'left':
+                self.remove_widget(self.add_menu)
+                self.remove_widget(self.edit_menu)
 
     def show_add(self, touch):
         self.add_menu.x = touch.x - self.add_menu.width / 2
@@ -157,12 +200,13 @@ class Board(FloatLayout):
             self.add_widget(self.edit_menu)
 
     def show_add_popup(self):
-        form = AddNodeForm()
-        p = AddNodePopup(title='Add a story node',
-                content=form,
-                size_hint=(.4, .4))
-        form.popup = p.proxy_ref
-        form.board = self.proxy_ref
+        p = AddNodePopup(attach_to=self)
+        # form = AddNodeForm()
+        # p = AddNodePopup(title='Add a story node',
+        #         content=form,
+        #         size_hint=(.4, .4))
+        # form.board = self.proxy_ref
+        p.board = self.proxy_ref
         p.open()
 
     def show_edit_popup(self):
@@ -197,8 +241,28 @@ class Board(FloatLayout):
 class HomeScreen(Screen):
     pass
 
-class EditScreen(Screen):
+class FileBrowserPopup(Popup):
     pass
+
+class FileBrowserContent(BoxLayout):
+    pass
+
+class EditScreen(Screen):
+
+    # def __init__(self, **kwargs):
+    #     super(EditScreen, self).__init__(**kwargs)
+
+    def show_file_chooser(self):
+        file_window = FileBrowserPopup(attach_to=self)
+        file_window.board = self.ids['board']
+        file_window.open()
+
+    def check_current_file(self):
+        board = self.ids['board']
+        if board.current_file:
+            board.save_story(board.current_file)
+        else:
+            self.show_file_chooser()
 
 class StoryboardApp(App):
 

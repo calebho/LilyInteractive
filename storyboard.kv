@@ -1,38 +1,43 @@
 #:kivy 1.9.1
+#:import expanduser os.path.expanduser
 
 <Button, Label, TextInput>:
   font_size: dp(20)
 
-<AddNodeForm>:
-  id: form
-  orientation: 'vertical'
+<AddNodePopup>:
+  title: 'Add a story node'
+  size_hint: .4, .4
   
-  GridLayout:
-    size_hint: 1, 0.8
-    pos_hint: {'y': 0.2}
-    cols: 2
-    row_force_default: True
-    row_default_height: dp(40)
-    padding: map(dp, (10, 10))
-    spacing: map(dp, (0, 10))
+  BoxLayout:
+    id: form
+    orientation: 'vertical'
+    
+    GridLayout:
+      size_hint: 1, 0.8
+      pos_hint: {'y': 0.2}
+      cols: 2
+      row_force_default: True
+      row_default_height: dp(40)
+      padding: map(dp, (10, 10))
+      spacing: map(dp, (0, 10))
 
-    Label:
-      text: 'Name'
-    TextInput:
-      multiline: False
-      on_text: form.fields['name'] = self.text
+      Label:
+        text: 'Name'
+      TextInput:
+        multiline: False
+        on_text: root.fields['name'] = self.text
 
-  GridLayout:
-    size_hint: 1, 0.2
-    rows: 1
-    padding: map(dp, (10, 10))
-    spacing: map(dp, (0, 10))
-    Button:
-      text: 'Submit'
-      on_release: form.board.add_node(**form.fields); form.popup.dismiss()
-    Button:
-      text: 'Cancel'
-      on_release: form.popup.dismiss()
+    GridLayout:
+      size_hint: 1, 0.2
+      rows: 1
+      padding: map(dp, (10, 10))
+      spacing: map(dp, (0, 10))
+      Button:
+        text: 'Submit'
+        on_release: root.board.add_node(**root.fields); root.dismiss()
+      Button:
+        text: 'Cancel'
+        on_release: root.dismiss()
   
 <EditNodeForm>:
   id: form
@@ -123,7 +128,50 @@
     Button:
       text: 'Quit'
 
+<FileBrowserPopup>:
+  title: 'File system'
+  size_hint: .9, .9
+
+  BoxLayout:
+    orientation: 'vertical'
+
+    BoxLayout:
+      size_hint_y: None
+      height: dp(30)
+
+      Button:
+        text: 'Icon view'
+        on_press: fc.view_mode = 'icon'
+      Button:
+        text: 'List view'
+        on_press: fc.view_mode = 'list'
+
+    FileChooser:
+      id: fc
+      rootpath: expanduser('~')
+      filters: ['*.story']
+      FileChooserIconLayout
+      FileChooserListLayout
+
+    BoxLayout:
+      size_hint_y: None
+      height: dp(30)
+      
+      TextInput:
+        id: textbox
+        size_hint_x: .8
+      Button:
+        size_hint_x: .1
+        text: 'Save'
+        on_press: root.board.save_story(textbox.text + '.story'); root.dismiss()
+      Button:
+        size_hint_x: .1
+        text: 'Cancel'
+        on_press: root.dismiss()
+
+
 <EditScreen>:
+  id: screen
   BoxLayout:
     size_hint: 1, 0.075
     pos_hint: {'x': 0, 'y': .925}
@@ -133,6 +181,10 @@
       on_press: root.manager.current = 'home'
     Button:
       text: 'Save'
+      on_press: screen.check_current_file()
+    Button:
+      text: 'Save as'
+      on_press: screen.show_file_chooser()
   
   Board:
     id: board
