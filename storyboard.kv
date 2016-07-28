@@ -57,6 +57,68 @@
         text: 'Cancel'
         on_press: root.dismiss()
 
+<Action>:
+  orientation: 'horizontal'
+  size_hint_y: None
+  height: dp(40)
+  padding: map(dp, (5, 5))
+  type_button_wid: type_button
+
+  canvas.before:
+    Color:
+      rgba: 0, 0, 0, 1
+    Rectangle:
+      size: self.size
+      pos: self.pos
+  Button:
+    id: type_button
+    size_hint_x: .2
+    text: 'type'
+  Label:
+    id: parameters
+    size_hint_x: .6
+  Button:
+    text: 'Up'
+    size_hint_x: .08
+  Button:
+    text: 'Down'
+    size_hint_x: .12
+
+<AddActionPopup>:
+  actions_list_wid: actions_list
+  add_action_btn_wid: add_action_button
+  title: 'Add actions...'
+  size_hint: .4, .9
+  
+  BoxLayout:
+    orientation: 'vertical'
+    Button:
+      id: add_action_button
+      size_hint_y: .1
+      text: 'Add an action'
+    ScrollView:
+      do_scroll_x: False
+      size_hint_y: .8
+      viewport_size: self.size
+      bar_width: dp(10)
+      GridLayout:
+        id: actions_list
+        cols: 1
+        spacing: dp(5)
+        padding: map(dp, (5, 5))
+        size_hint_y: None
+        # height: self.height
+        orientation: 'vertical'
+        # Action
+        # Action
+    BoxLayout:
+      orientation: 'horizontal'
+      size_hint_y: .1
+      Button:
+        text: 'Save'
+      Button:
+        text: 'Cancel'
+    
 <AddNodePopup>:
   submit_btn_wid: submit_btn
   node_name: name_field.text
@@ -96,6 +158,7 @@
   
 <EditScreen>:
   dropdown_wid: dropdown
+  dropdown_btn_wid: dropdown_btn
   node_info_wid: node_info
 
   BoxLayout:
@@ -120,7 +183,7 @@
       orientation: 'vertical'
 
       Button:
-        # id: node_selector
+        id: dropdown_btn
         text: '--select a node--'
         size_hint_y: .2
         on_release: dropdown.open(self)

@@ -54,8 +54,42 @@ class AddNodePopup(Popup):
     submit_btn_wid = ObjectProperty()
     node_name = StringProperty()
 
+class AddActionPopup(Popup):
+    actions_list_wid = ObjectProperty()
+    add_action_btn_wid = ObjectProperty()
+
+    def __init__(self, **kwargs):
+        super(AddActionPopup, self).__init__(**kwargs)
+        self.actions_list_wid.bind(minimum_height=self.actions_list_wid.setter('height'))
+
+class Action(BoxLayout):
+    action_type = StringProperty()
+    type_button_wid = ObjectProperty()
+
+    def __init__(self, **kwargs):
+        super(Action, self).__init__(**kwargs)
+        self.init_type_dropdown()
+
+    def init_type_dropdown(self):
+        d = DropDown()
+        action_types = ['say', 'listen', 'play']
+        for action_type in action_types:
+            b = Button(text=action_type, size_hint_y=None, height=dp(30))
+
+            def action_select_callback(button):
+                d.select(button.text)
+                self.action_type = button.text
+            b.bind(on_release=action_select_callback)
+            d.add_widget(b)
+
+        d.bind(on_select=\
+                lambda instance, text: setattr(self.type_button_wid, 'text', text))
+        self.type_button_wid.bind(on_release=d.open)
+
+
 class EditScreen(Screen):
     dropdown_wid = ObjectProperty()
+    dropdown_btn_wid = ObjectProperty()
     node_info_wid = ObjectProperty()
 
     def __init__(self, **kwargs):
@@ -101,16 +135,15 @@ class EditScreen(Screen):
         return image
     
     def show_add_popup(self, button):
-        # first select the button
-        self.dropdown_wid.select(button.text)
-        # then show the add popup
+        # show the add popup
         p = AddNodePopup(attach_to=self)
         p.open()
         
         def show_info_callback(button):
             """Shows the node information in the sidebar
             """
-            p.dismiss()
+            self.dropdown_wid.select(button.text)
+            # p.dismiss()
             node_info = self.node_info_wid
             node_info.clear_widgets()
             
@@ -119,11 +152,14 @@ class EditScreen(Screen):
             node_info.add_widget(TextInput(text=button.text, multiline=False))
 
             node_info.add_widget(Label(text='actions:'))
-            node_info.add_widget(Button(text='edit actions...'))
+            b = Button(text='edit actions...')
+            b.bind(on_release=self.show_add_action_popup)
+            node_info.add_widget(b)
 
         def add_callback(button):
             """Add the node to the story and update the dropdown menu
             """
+            self.dropdown_wid.dismiss()
             node_name = p.node_name
             self.story.add_node(node_name)
             print(self.story.nodes())
@@ -134,6 +170,14 @@ class EditScreen(Screen):
             b.bind(on_release=show_info_callback)
             self.dropdown_wid.add_widget(b)
         p.submit_btn_wid.bind(on_release=add_callback)
+
+    def show_add_action_popup(self, button):
+        p = AddActionPopup(attach_to=self)
+        p.open()
+        def add_action_callback(button):
+            p.actions_list_wid.add_widget(Action())
+
+        p.add_action_btn_wid.bind(on_release=add_action_callback)
 
 
 
