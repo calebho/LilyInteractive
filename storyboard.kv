@@ -57,6 +57,28 @@
         text: 'Cancel'
         on_press: root.dismiss()
 
+<AddEdgePopup>:
+  size_hint: .4, .9
+  node_list: node_list
+  save_btn: save_btn
+
+  BoxLayout:
+    orientation: 'vertical'
+
+    BoxLayout:
+      id: node_list
+      orientation: 'vertical'
+      size_hint_y: .9
+    BoxLayout:
+      orientation: 'horizontal'
+      size_hint_y: .1
+      Button:
+        id: save_btn
+        text: 'Save'
+      Button:
+        text: 'Cancel'
+        on_release: root.dismiss()
+  
 <Action>:
   orientation: 'horizontal'
   size_hint_y: None
@@ -172,6 +194,8 @@
   # dropdown_wid: dropdown
   dropdown_btn_wid: dropdown_btn
   node_info_wid: node_info
+  refresh_btn: refresh_btn
+  storyboard_wid: storyboard
 
   BoxLayout:
     size_hint: 1, 0.075
@@ -193,11 +217,15 @@
     BoxLayout:
       size_hint: .3, 1
       orientation: 'vertical'
-
+    
+      Button:
+        id: refresh_btn
+        text: 'refresh'
+        size_hint_y: .1
       Button:
         id: dropdown_btn
-        text: '--select a node--'
-        size_hint_y: .2
+        text: '--add/select a node--'
+        size_hint_y: .1
           
       GridLayout:
         id: node_info
@@ -208,6 +236,9 @@
      
     Image:
       id: storyboard
-      texture: root.test_image().texture
       allow_stretch: True
+      canvas.before:
+        Rectangle:
+          size: self.size
+          pos: self.pos
 

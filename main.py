@@ -19,10 +19,12 @@ from kivy.metrics import dp, Metrics
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.screenmanager import ScreenManager, Screen, FallOutTransition
+from kivy.uix.widget import Widget
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.uix.textinput import TextInput
 from kivy.uix.button import Button
+from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.filechooser import FileChooser
 from kivy.core.image import Image as CoreImage
 from kivy.uix.dropdown import DropDown
@@ -30,14 +32,15 @@ from kivy.properties import ObjectProperty, StringProperty
 
 Window.size = map(dp, (1280, 720))
 
-# def inspect_wrap(f):
-#     def wrapper(*args, **kwargs):
-#         result = f(*args, **kwargs)
-#         print(inspect.stack()[1])
-#         return result
-#     return wrapper
-# 
-# Label.__init__ = inspect_wrap(Label.__init__)
+# matplotlib parameters
+plt.rcParams['figure.dpi'] = 200
+plt.rcParams['figure.figsize'] = 16, 12
+plt.rcParams['figure.subplot.left'] = 0
+plt.rcParams['figure.subplot.right'] = 1
+plt.rcParams['figure.subplot.top'] = 1
+plt.rcParams['figure.subplot.bottom'] = 0
+plt.rcParams['figure.subplot.wspace'] = 0
+plt.rcParams['figure.subplot.hspace'] = 0
 
 class AddActionPopup(Popup):
     pass
@@ -50,6 +53,10 @@ class FileBrowserPopup(Popup):
 
 class FileBrowserContent(BoxLayout):
     pass
+
+class AddEdgePopup(Popup):
+    node_list = ObjectProperty()
+    save_btn = ObjectProperty()
 
 class AddNodePopup(Popup):
     submit_btn_wid = ObjectProperty()
@@ -195,6 +202,8 @@ class EditScreen(Screen):
     # dropdown_wid = ObjectProperty()
     dropdown_btn_wid = ObjectProperty()
     node_info_wid = ObjectProperty()
+    refresh_btn = ObjectProperty()
+    storyboard_wid = ObjectProperty()
 
     def __init__(self, **kwargs):
         super(EditScreen, self).__init__(**kwargs)
@@ -202,6 +211,7 @@ class EditScreen(Screen):
         self.init_node_select_dropdown()
         self.story = Story()
         self.current_node = None
+        self.refresh_btn.bind(on_release=self.refresh_graph)
 
     def init_node_select_dropdown(self):
         self.d = d = DropDown()
@@ -223,19 +233,9 @@ class EditScreen(Screen):
         else:
             self.show_file_chooser()
 
-    def test_image(self):
-        plt.rcParams['figure.dpi'] = 200
-        plt.rcParams['figure.figsize'] = 16, 12
-        plt.rcParams['figure.subplot.left'] = 0
-        plt.rcParams['figure.subplot.right'] = 1
-        plt.rcParams['figure.subplot.top'] = 1
-        plt.rcParams['figure.subplot.bottom'] = 0
-        plt.rcParams['figure.subplot.wspace'] = 0
-        plt.rcParams['figure.subplot.hspace'] = 0
-
-        g = nx.DiGraph()
-        g.add_nodes_from(['box office', 'concessions', 'auditorium'])
-        g.add_edge('box office', 'concessions')
+    def refresh_graph(self, button):
+        g = self.story
+        plt.clf()
         nx.draw_networkx(g, node_size=2000, font_size=dp(16), node_shape=',')
 
         curr_axes = plt.gca()
@@ -247,7 +247,7 @@ class EditScreen(Screen):
         buf.seek(0)
         image = CoreImage(buf, ext='png')
         
-        return image
+        self.storyboard_wid.texture = image.texture
     
     def show_add_popup(self, button):
         # show the add popup
@@ -268,9 +268,19 @@ class EditScreen(Screen):
             node_info.add_widget(TextInput(text=button.text, multiline=False))
 
             node_info.add_widget(Label(text='actions:'))
-            b = Button(text='edit actions...')
-            b.bind(on_release=self.show_add_action_popup)
-            node_info.add_widget(b)
+            actions_b = Button(text='edit...')
+            actions_b.bind(on_release=self.show_add_action_popup)
+            node_info.add_widget(actions_b)
+
+            node_info.add_widget(Label(text='destinations:'))
+            dest_b = Button(text='edit...')
+            dest_b.bind(on_release=self.show_add_dest_popup)
+            node_info.add_widget(dest_b)
+
+            node_info.add_widget(Label(text='origins:'))
+            orig_b = Button(text='edit...')
+            orig_b.bind(on_release=self.show_add_origin_popup)
+            node_info.add_widget(orig_b)
 
         def add_callback(button):
             """Add the node to the story and update the dropdown menu
@@ -314,7 +324,69 @@ class EditScreen(Screen):
         p.add_action_btn_wid.bind(on_release=add_action_callback)
         p.save_btn.bind(on_release=save_callback)
 
+    def show_add_dest_popup(self, button):
+        p = AddEdgePopup(title='Add destinations')
+        valid_dest = self.story.nodes()
+        valid_dest.remove(self.current_node)
+        for dest in valid_dest:
+            b = ToggleButton(text=dest, size_hint_y=None, height=dp(30))
+            if dest in self.story.neighbors(self.current_node):
+                b.state = 'down'
+            p.node_list.add_widget(b)
+        p.node_list.add_widget(Widget())
 
+        def save_callback(button):
+            to_add = []
+            to_remove = []
+            for child in p.node_list.children:
+                if isinstance(child, ToggleButton):
+                    node_name = child.text
+                    if child.state == 'down':
+                        to_add.append(node_name)
+                    else:
+                        to_remove.append(node_name)
+            for node in to_add:
+                if node not in self.story.neighbors(self.current_node):
+                    self.story.add_edge(self.current_node, node)
+            for node in to_remove:
+                if node in self.story.neighbors(self.current_node):
+                    self.story.remove_edge(self.current_node, node)
+            p.dismiss()
+        p.save_btn.bind(on_release=save_callback)
+        
+        p.open()
+
+    def show_add_origin_popup(self, button):
+        p = AddEdgePopup(title='Add origins')
+        valid_orig = self.story.nodes()
+        valid_orig.remove(self.current_node)
+        for orig in valid_orig:
+            b = ToggleButton(text=orig, size_hint_y=None, height=dp(30))
+            if orig in self.story.predecessors(self.current_node):
+                b.state = 'down'
+            p.node_list.add_widget(b)
+        p.node_list.add_widget(Widget())
+
+        def save_callback(button):
+            to_add = []
+            to_remove = []
+            for child in p.node_list.children:
+                if isinstance(child, ToggleButton):
+                    node_name = child.text
+                    if child.state == 'down':
+                        to_add.append(node_name)
+                    else:
+                        to_remove.append(node_name)
+            for node in to_add:
+                if node not in self.story.predecessors(self.current_node):
+                    self.story.add_edge(node, self.current_node)
+            for node in to_remove:
+                if node in self.story.predecessors(self.current_node):
+                    self.story.remove_edge(node, self.current_node)
+            p.dismiss()
+        p.save_btn.bind(on_release=save_callback)
+        
+        p.open()
 
 class StoryboardApp(App):
 
