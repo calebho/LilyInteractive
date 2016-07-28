@@ -58,11 +58,29 @@ class AddNodePopup(Popup):
 class AddActionPopup(Popup):
     actions_list_wid = ObjectProperty()
     add_action_btn_wid = ObjectProperty()
+    save_btn = ObjectProperty()
+    cancel_btn = ObjectProperty()
 
-    def __init__(self, **kwargs):
+    def __init__(self, existing_actions=None, **kwargs):
         super(AddActionPopup, self).__init__(**kwargs)
         self.actions_list_wid.bind(minimum_height=self.actions_list_wid.setter('height'))
-        self.actions_temp = []
+        self._actions_temp = None
+        self.actions_temp = existing_actions
+
+    @property
+    def actions_temp(self):
+        return self._actions_temp
+
+    @actions_temp.setter
+    def actions_temp(self, actions):
+        self._actions_temp = []
+        if actions:
+            for action in actions:
+                a = Action()
+                a.action_type = action['type']
+                a.type_button_wid.text = action['type']
+                a.parameters = action['kwargs']
+                self.add_action(a)
 
     def add_action(self, action):
         def move_action_up(button):
@@ -109,6 +127,9 @@ class Action(BoxLayout):
 
             def action_select_callback(button):
                 d.select(button.text)
+                # reset parameters when changing action type
+                if self.action_type != button.text:
+                    self.parameters = None
                 self.action_type = button.text
             b.bind(on_release=action_select_callback)
             d.add_widget(b)
@@ -124,26 +145,45 @@ class Action(BoxLayout):
         if self.action_type == 'say':
             g.add_widget(Label(text='message'))
             t = TextInput()
+            if self.parameters:
+                try:
+                    t.text = self.parameters['message']
+                except KeyError: 
+                    pass
             t.bind(text=lambda _, value: param_temp.update({'message': value}))
             g.add_widget(t)
         elif self.action_type == 'listen':
             g.add_widget(Label(text='intent'))
             t = TextInput(multiline=False)
+            if self.parameters:
+                try:
+                    t.text = self.parameters['intent']
+                except KeyError:
+                    pass
             t.bind(text=lambda _, value: param_temp.update({'intent': value}))
             g.add_widget(t)
         elif self.action_type == 'play':
             g.add_widget(Label(text='file path'))
             t = TextInput(multiline=False)
+            if self.parameters:
+                try:
+                    t.text = self.parameters['filename']
+                except KeyError:
+                    pass
             t.bind(text=lambda _, value: param_temp.update({'filename': value}))
             g.add_widget(t)
         else:
             return
 
-        p = Popup(title='Set parameters', size_hint=(.5, .5))
+        p = Popup(title='Set parameters', size_hint=(.5, .2))
         # btn.bind(on_release=p.open)
 
+        def submit_callback(button):
+            self.parameters = param_temp
+            p.dismiss()
+
         submit_btn = Button(text='Submit')
-        submit_btn.bind(on_release=lambda _: setattr(self, 'parameters', param_temp))
+        submit_btn.bind(on_release=submit_callback)
         cancel_btn = Button(text='Cancel')
         cancel_btn.bind(on_release=lambda _: p.dismiss())
         g.add_widget(submit_btn)
@@ -152,13 +192,24 @@ class Action(BoxLayout):
         p.open()
 
 class EditScreen(Screen):
-    dropdown_wid = ObjectProperty()
+    # dropdown_wid = ObjectProperty()
     dropdown_btn_wid = ObjectProperty()
     node_info_wid = ObjectProperty()
 
     def __init__(self, **kwargs):
         super(EditScreen, self).__init__(**kwargs)
+        self.d = None
+        self.init_node_select_dropdown()
         self.story = Story()
+        self.current_node = None
+
+    def init_node_select_dropdown(self):
+        self.d = d = DropDown()
+        b = Button(text='Add a node...', size_hint_y=None, height=dp(30))
+        b.bind(on_release=self.show_add_popup)
+        d.add_widget(b)
+        d.bind(on_select=lambda _, text: setattr(self.dropdown_btn_wid, 'text', text))
+        self.dropdown_btn_wid.bind(on_release=d.open)
 
     def show_file_chooser(self):
         file_window = FileBrowserPopup(attach_to=self)
@@ -206,7 +257,8 @@ class EditScreen(Screen):
         def show_info_callback(button):
             """Shows the node information in the sidebar
             """
-            self.dropdown_wid.select(button.text)
+            self.current_node = button.text
+            self.d.select(button.text)
             # p.dismiss()
             node_info = self.node_info_wid
             node_info.clear_widgets()
@@ -223,7 +275,7 @@ class EditScreen(Screen):
         def add_callback(button):
             """Add the node to the story and update the dropdown menu
             """
-            self.dropdown_wid.dismiss()
+            self.d.dismiss()
             node_name = p.node_name
             self.story.add_node(node_name)
             print(self.story.nodes())
@@ -232,11 +284,12 @@ class EditScreen(Screen):
             # update the dropdown menu
             b = Button(text=node_name, size_hint_y=None, height=dp(30)) 
             b.bind(on_release=show_info_callback)
-            self.dropdown_wid.add_widget(b)
+            self.d.add_widget(b)
         p.submit_btn_wid.bind(on_release=add_callback)
 
     def show_add_action_popup(self, button):
-        p = AddActionPopup(attach_to=self)
+        p = AddActionPopup(existing_actions=self.story.get_actions(self.current_node),
+                attach_to=self)
         p.open()
         def add_action_callback(button):
             a = Action()
@@ -244,7 +297,22 @@ class EditScreen(Screen):
             # p.actions_list_wid.add_widget(a)
             # p.actions_temp.append(a)
 
+        def update_story(action):
+            if action.action_type == 'say':
+                self.story.add_say(self.current_node, **action.parameters)
+            elif action.action_type == 'listen':
+                self.story.add_listen(self.current_node, **action.parameters)
+            elif action.action_type == 'play':
+                self.story.add_play(self.current_node, **action.parameters)
+
+        def save_callback(button):
+            actions = p.actions_temp
+            for action in actions:
+                update_story(action)
+            p.dismiss()
+
         p.add_action_btn_wid.bind(on_release=add_action_callback)
+        p.save_btn.bind(on_release=save_callback)
 
 
 

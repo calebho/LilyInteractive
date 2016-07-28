@@ -94,6 +94,8 @@
 <AddActionPopup>:
   actions_list_wid: actions_list
   add_action_btn_wid: add_action_button
+  save_btn: save_btn
+  cancel_btn: cancel_btn
   title: 'Add actions...'
   size_hint: .4, .9
   
@@ -122,9 +124,12 @@
       orientation: 'horizontal'
       size_hint_y: .1
       Button:
+        id: save_btn
         text: 'Save'
       Button:
+        id: cancel_btn
         text: 'Cancel'
+        on_release: root.dismiss()
     
 <AddNodePopup>:
   submit_btn_wid: submit_btn
@@ -164,7 +169,7 @@
         on_release: root.dismiss()
   
 <EditScreen>:
-  dropdown_wid: dropdown
+  # dropdown_wid: dropdown
   dropdown_btn_wid: dropdown_btn
   node_info_wid: node_info
 
@@ -193,15 +198,6 @@
         id: dropdown_btn
         text: '--select a node--'
         size_hint_y: .2
-        on_release: dropdown.open(self)
-
-        DropDown:
-          id: dropdown
-          Button:
-            text: 'Add node...'
-            size_hint_y: None
-            height: dp(30)
-            on_release: root.show_add_popup(self)
           
       GridLayout:
         id: node_info
