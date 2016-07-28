@@ -4,118 +4,6 @@
 <Button, Label, TextInput>:
   font_size: dp(20)
 
-<AddNodePopup>:
-  title: 'Add a story node'
-  size_hint: .4, .4
-  
-  BoxLayout:
-    id: form
-    orientation: 'vertical'
-    
-    GridLayout:
-      size_hint: 1, 0.8
-      pos_hint: {'y': 0.2}
-      cols: 2
-      row_force_default: True
-      row_default_height: dp(40)
-      padding: map(dp, (10, 10))
-      spacing: map(dp, (0, 10))
-
-      Label:
-        text: 'Name'
-      TextInput:
-        multiline: False
-        on_text: root.fields['name'] = self.text
-
-    GridLayout:
-      size_hint: 1, 0.2
-      rows: 1
-      padding: map(dp, (10, 10))
-      spacing: map(dp, (0, 10))
-      Button:
-        text: 'Submit'
-        on_release: root.board.add_node(**root.fields); root.dismiss()
-      Button:
-        text: 'Cancel'
-        on_release: root.dismiss()
-  
-<EditNodeForm>:
-  id: form
-  orientation: 'vertical'
-  
-  GridLayout:
-    size_hint: 1, 0.8
-    pos_hint: {'y': 0.2}
-    cols: 2
-    row_force_default: True
-    row_default_height: dp(40)
-    padding: map(dp, (10, 10))
-    spacing: map(dp, (0, 10))
-
-    Label:
-      text: 'Name'
-    TextInput:
-      multiline: False
-      on_text: form.fields['name'] = self.text
-
-  GridLayout:
-    size_hint: 1, 0.2
-    rows: 1
-    padding: map(dp, (10, 10))
-    spacing: map(dp, (0, 10))
-    Button:
-      text: 'Submit'
-      on_release: form.board.edit_node(**form.fields); form.popup.dismiss()
-    Button:
-      text: 'Cancel'
-      on_release: form.popup.dismiss()
-  
-<BubbleButton>:
-  font_size: dp(16)
-  size_hint: None, None
-  text_size: None, None
-  size: map(dp, self.texture_size)
-  halign: 'center'
-  # valign: 'middle'
-  padding_y: dp(5)
-
-<AddMenu>:
-  id: menu
-  size_hint: 0, 0
-  size: add.size
-  
-  AddMenuButton:
-    id: add
-    text: 'Add node'
-
-<EditMenu>:
-  size_hint: 0, 0
-  size: edit.width + delete.width, edit.height
-
-  EditMenuButton:
-    id: edit
-    text: 'Edit...'
-  DeleteButton:
-    id: delete
-    text: 'Delete'
-
-<StoryLabel>:
-  canvas.before:
-    Color:
-      rgba: 0, 0, 0, 1
-    Rectangle:
-      size: self.size
-  
-  size: self.parent.size
-  color: 1, 1, 1, 1
-  # text: 'text'
-
-<StoryNode>:
-  size_hint: 0, 0
-  size: label.texture_size
-  StoryLabel:
-    id: label
-
 <HomeScreen>:
   BoxLayout:
     orientation: 'vertical'
@@ -169,9 +57,47 @@
         text: 'Cancel'
         on_press: root.dismiss()
 
+<AddNodePopup>:
+  submit_btn_wid: submit_btn
+  node_name: name_field.text
+  title: 'Add a story node'
+  size_hint: .4, .4
+  
+  BoxLayout:
+    id: form
+    orientation: 'vertical'
+    
+    GridLayout:
+      size_hint: 1, 0.8
+      pos_hint: {'y': 0.2}
+      cols: 2
+      row_force_default: True
+      row_default_height: dp(40)
+      padding: map(dp, (10, 10))
+      spacing: map(dp, (0, 10))
 
+      Label:
+        text: 'Name'
+      TextInput:
+        id: name_field
+        multiline: False
+
+    GridLayout:
+      size_hint: 1, 0.2
+      rows: 1
+      padding: map(dp, (10, 10))
+      spacing: map(dp, (0, 10))
+      Button:
+        id: submit_btn
+        text: 'Submit'
+      Button:
+        text: 'Cancel'
+        on_release: root.dismiss()
+  
 <EditScreen>:
-  id: screen
+  dropdown_wid: dropdown
+  node_info_wid: node_info
+
   BoxLayout:
     size_hint: 1, 0.075
     pos_hint: {'x': 0, 'y': .925}
@@ -181,16 +107,41 @@
       on_press: root.manager.current = 'home'
     Button:
       text: 'Save'
-      on_press: screen.check_current_file()
+      on_press: root.check_current_file()
     Button:
       text: 'Save as'
-      on_press: screen.show_file_chooser()
+      on_press: root.show_file_chooser()
   
-  Board:
-    id: board
+  BoxLayout:
     size_hint: 1, 0.925
     
-    canvas.before:
-      Rectangle:
-        size: self.size
+    BoxLayout:
+      size_hint: .3, 1
+      orientation: 'vertical'
+
+      Button:
+        # id: node_selector
+        text: '--select a node--'
+        size_hint_y: .2
+        on_release: dropdown.open(self)
+
+        DropDown:
+          id: dropdown
+          Button:
+            text: 'Add node...'
+            size_hint_y: None
+            height: dp(30)
+            on_release: root.show_add_popup(self)
+          
+      GridLayout:
+        id: node_info
+        size_hint_y: .8
+        cols: 2
+        row_default_height: dp(40)
+        row_force_default: True
+     
+    Image:
+      id: storyboard
+      texture: root.test_image().texture
+      allow_stretch: True
 

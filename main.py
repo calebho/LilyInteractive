@@ -2,9 +2,12 @@ from __future__ import print_function
 
 import inspect
 import cPickle as pickle
-# import pickle
+import matplotlib.pyplot as plt
+import io
+import networkx as nx
 
 from story import Story, StoryError
+from functools import partial
 
 from kivy.config import Config
 # disable multitouch from mouse
@@ -13,18 +16,16 @@ Config.set('input', 'mouse', 'mouse,disable_multitouch')
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.metrics import dp, Metrics
-from kivy.lang import Builder
-from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.gridlayout import GridLayout
 from kivy.uix.screenmanager import ScreenManager, Screen, FallOutTransition
-from kivy.uix.bubble import Bubble, BubbleButton
 from kivy.uix.label import Label
-from kivy.uix.scatter import Scatter
 from kivy.uix.popup import Popup
 from kivy.uix.textinput import TextInput
 from kivy.uix.button import Button
 from kivy.uix.filechooser import FileChooser
+from kivy.core.image import Image as CoreImage
+from kivy.uix.dropdown import DropDown
+from kivy.properties import ObjectProperty, StringProperty
 
 Window.size = map(dp, (1280, 720))
 
@@ -37,206 +38,8 @@ Window.size = map(dp, (1280, 720))
 # 
 # Label.__init__ = inspect_wrap(Label.__init__)
 
-class AddNodeField(BoxLayout):
-    pass
-
-class AddNodeForm(BoxLayout):
-    
-    def __init__(self, **kwargs):
-        super(AddNodeForm, self).__init__(**kwargs)
-        self.fields = {}
-
-class AddNodePopup(Popup):
-
-    def __init__(self, **kwargs):
-        super(AddNodePopup, self).__init__(**kwargs)
-        self.fields = {}
-
-class AddMenu(Bubble):
-    pass
-
-class AddMenuButton(BubbleButton):
-    
-    def on_press(self):
-        if not self.last_touch.button == 'left':
-            self.state = 'normal'
-
-    def on_release(self):
-        if self.last_touch.button == 'left':
-            menu = self.parent.parent
-            board = menu.board
-            board.show_add_popup()
-
-class EditMenu(Bubble):
-    pass
-
-
 class AddActionPopup(Popup):
     pass
-
-class AddActionButton(BubbleButton):
-
-    def on_press(self):
-        if not self.last_touch.button == 'left':
-            self.state = 'normal'
-
-    def on_release(self):
-        if self.last_touch.button == 'left':
-            print('adding action')
-            
-class EditNodeForm(BoxLayout):
-
-    def __init__(self, **kwargs):
-        super(EditNodeForm, self).__init__(**kwargs)
-        self.fields = {}
-
-class EditNodePopup(Popup):
-    pass
-
-class EditMenuButton(BubbleButton):
-    
-    def on_press(self):
-        if not self.last_touch.button == 'left':
-            self.state = 'normal'
-
-    def on_release(self):
-        if self.last_touch.button == 'left':
-            menu = self.parent.parent
-            board = menu.board
-            board.show_edit_popup()
-
-class DeleteButton(BubbleButton):
-
-    def on_press(self):
-        if not self.last_touch.button == 'left':
-            self.state = 'normal'
-
-    def on_release(self):
-        if self.last_touch.button == 'left':
-            menu = self.parent.parent
-            board = menu.board
-            board.delete_node()
-
-class StoryLabel(Label):
-
-    def on_touch_down(self, touch):
-        if self.collide_point(*touch.pos) and touch.button == 'right':
-            touch.grab(self)
-            # print('grabbed')
-
-    def on_touch_up(self, touch):
-        # print('current:', touch.grab_current)
-        # print('self:', self)
-        if touch.grab_current is self:
-            touch.ungrab(self)
-            board = self.parent.parent
-            touch.push()
-            touch.apply_transform_2d(self.to_window)
-            board.current_node = self.parent.proxy_ref
-            board.show_edit(touch)
-            touch.pop()
-            # print('released')
-
-class StoryNode(Scatter):
-    pass
-
-class Board(FloatLayout):
-    def __init__(self, **kwargs):
-        super(Board, self).__init__(**kwargs)
-        self.add_menu = add_menu = AddMenu()
-        add_menu.board = self.proxy_ref
-        self.edit_menu = edit_menu = EditMenu()
-        edit_menu.board = self.proxy_ref
-        self.current_node = None
-        self.story = Story()
-        self.current_file = None
-
-    def save_story(self, filename):
-        # TODO: check whether file exists already?
-        with open(filename, 'w') as f:
-            pickle.dump(self.story, f)
-            self.current_file = filename
-
-    def on_touch_down(self, touch):
-        if self.collide_point(*touch.pos):
-            touch.grab(self)
-            print('grabbed board')
-            result = super(Board, self).on_touch_down(touch) # check children first
-            # print('button: %s' % touch.button)
-            # print('result:', result)
-            # print(self.add_menu.collide_point(*touch.pos))
-            if result:
-                return None
-            # elif touch.button == 'left':
-            #     # print('removing widget')
-            #     self.remove_widget(self.add_menu)
-            #     self.remove_widget(self.edit_menu)
-            elif touch.button == 'right' and not self.add_menu.collide_point(*touch.pos):
-                self.show_add(touch)
-            return True
-
-    def on_touch_up(self, touch):
-        if touch.grab_current is self:
-            touch.ungrab(self)
-            print('released board')
-            if touch.button == 'left':
-                self.remove_widget(self.add_menu)
-                self.remove_widget(self.edit_menu)
-
-    def show_add(self, touch):
-        self.add_menu.x = touch.x - self.add_menu.width / 2
-        self.add_menu.y = touch.y
-        self.add_menu.t_point = touch.pos
-        if not self.add_menu.parent:
-            self.add_widget(self.add_menu)
-
-    def show_edit(self, touch):
-        touch.apply_transform_2d(self.to_window)
-        # print(touch.pos)
-        # print('showing edit menu')
-        self.edit_menu.x = touch.x - self.edit_menu.width / 2
-        self.edit_menu.y = touch.y
-        if not self.edit_menu.parent:
-            self.add_widget(self.edit_menu)
-
-    def show_add_popup(self):
-        p = AddNodePopup(attach_to=self)
-        # form = AddNodeForm()
-        # p = AddNodePopup(title='Add a story node',
-        #         content=form,
-        #         size_hint=(.4, .4))
-        # form.board = self.proxy_ref
-        p.board = self.proxy_ref
-        p.open()
-
-    def show_edit_popup(self):
-        form = EditNodeForm()
-        p = EditNodePopup(title='Edit a story node',
-                content=form,
-                size_hint=(.4, .4))
-        form.popup = p.proxy_ref
-        form.board = self.proxy_ref
-        p.open()
-    
-    def add_node(self, name=None):
-        n = StoryNode(do_scale=False, do_rotation=False)
-        n.center = self.add_menu.t_point
-        print(name)
-        if name:
-            n.ids['label'].text = name
-        self.add_widget(n)
-
-    def edit_node(self, name=None):
-        node = self.current_node
-        assert node, 'Current is none'
-        if name:
-            node.ids['label'].text = name
-        self.current_node = None
-
-    def delete_node(self):
-        node = self.current_node
-        assert node, 'Current is none'
-        self.remove_widget(node)
 
 class HomeScreen(Screen):
     pass
@@ -247,10 +50,17 @@ class FileBrowserPopup(Popup):
 class FileBrowserContent(BoxLayout):
     pass
 
-class EditScreen(Screen):
+class AddNodePopup(Popup):
+    submit_btn_wid = ObjectProperty()
+    node_name = StringProperty()
 
-    # def __init__(self, **kwargs):
-    #     super(EditScreen, self).__init__(**kwargs)
+class EditScreen(Screen):
+    dropdown_wid = ObjectProperty()
+    node_info_wid = ObjectProperty()
+
+    def __init__(self, **kwargs):
+        super(EditScreen, self).__init__(**kwargs)
+        self.story = Story()
 
     def show_file_chooser(self):
         file_window = FileBrowserPopup(attach_to=self)
@@ -263,6 +73,69 @@ class EditScreen(Screen):
             board.save_story(board.current_file)
         else:
             self.show_file_chooser()
+
+    def test_image(self):
+        plt.rcParams['figure.dpi'] = 200
+        plt.rcParams['figure.figsize'] = 16, 12
+        plt.rcParams['figure.subplot.left'] = 0
+        plt.rcParams['figure.subplot.right'] = 1
+        plt.rcParams['figure.subplot.top'] = 1
+        plt.rcParams['figure.subplot.bottom'] = 0
+        plt.rcParams['figure.subplot.wspace'] = 0
+        plt.rcParams['figure.subplot.hspace'] = 0
+
+        g = nx.DiGraph()
+        g.add_nodes_from(['box office', 'concessions', 'auditorium'])
+        g.add_edge('box office', 'concessions')
+        nx.draw_networkx(g, node_size=2000, font_size=dp(16), node_shape=',')
+
+        curr_axes = plt.gca()
+        curr_axes.axes.get_xaxis().set_visible(False)
+        curr_axes.axes.get_yaxis().set_visible(False)
+        
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png')
+        buf.seek(0)
+        image = CoreImage(buf, ext='png')
+        
+        return image
+    
+    def show_add_popup(self, button):
+        # first select the button
+        self.dropdown_wid.select(button.text)
+        # then show the add popup
+        p = AddNodePopup(attach_to=self)
+        p.open()
+        
+        def show_info_callback(button):
+            """Shows the node information in the sidebar
+            """
+            p.dismiss()
+            node_info = self.node_info_wid
+            node_info.clear_widgets()
+            
+            node_info.add_widget(Label(text='name:'))
+            # TODO: allow node renaming?
+            node_info.add_widget(TextInput(text=button.text, multiline=False))
+
+            node_info.add_widget(Label(text='actions:'))
+            node_info.add_widget(Button(text='edit actions...'))
+
+        def add_callback(button):
+            """Add the node to the story and update the dropdown menu
+            """
+            node_name = p.node_name
+            self.story.add_node(node_name)
+            print(self.story.nodes())
+            p.dismiss()
+
+            # update the dropdown menu
+            b = Button(text=node_name, size_hint_y=None, height=dp(30)) 
+            b.bind(on_release=show_info_callback)
+            self.dropdown_wid.add_widget(b)
+        p.submit_btn_wid.bind(on_release=add_callback)
+
+
 
 class StoryboardApp(App):
 
