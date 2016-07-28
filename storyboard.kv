@@ -63,6 +63,9 @@
   height: dp(40)
   padding: map(dp, (5, 5))
   type_button_wid: type_button
+  set_param_btn_wid: parameters
+  move_up_btn: move_up
+  move_down_btn: move_down
 
   canvas.before:
     Color:
@@ -74,13 +77,17 @@
     id: type_button
     size_hint_x: .2
     text: 'type'
-  Label:
+  Button:
     id: parameters
     size_hint_x: .6
+    text: 'set parameters'
+    on_release: root.get_parameters()
   Button:
+    id: move_up
     text: 'Up'
     size_hint_x: .08
   Button:
+    id: move_down
     text: 'Down'
     size_hint_x: .12
 

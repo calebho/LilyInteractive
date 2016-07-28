@@ -17,6 +17,7 @@ from kivy.app import App
 from kivy.core.window import Window
 from kivy.metrics import dp, Metrics
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.gridlayout import GridLayout
 from kivy.uix.screenmanager import ScreenManager, Screen, FallOutTransition
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
@@ -61,14 +62,44 @@ class AddActionPopup(Popup):
     def __init__(self, **kwargs):
         super(AddActionPopup, self).__init__(**kwargs)
         self.actions_list_wid.bind(minimum_height=self.actions_list_wid.setter('height'))
+        self.actions_temp = []
+
+    def add_action(self, action):
+        def move_action_up(button):
+            for i, a in enumerate(self.actions_temp[:]):
+                if action is a and i > 0:
+                    self.actions_temp[i-1], self.actions_temp[i] =\
+                            self.actions_temp[i], self.actions_temp[i-1]
+            self.render_actions()
+
+        def move_action_down(button):
+            for i, a in enumerate(self.actions_temp[:]):
+                if action is a and i < len(self.actions_temp) - 1:
+                    self.actions_temp[i], self.actions_temp[i+1] =\
+                            self.actions_temp[i+1], self.actions_temp[i]
+            self.render_actions()
+            
+        action.move_up_btn.bind(on_release=move_action_up)
+        action.move_down_btn.bind(on_release=move_action_down)
+        self.actions_list_wid.add_widget(action)
+        self.actions_temp.append(action)
+
+    def render_actions(self):
+        self.actions_list_wid.clear_widgets()
+        for action in self.actions_temp:
+            self.actions_list_wid.add_widget(action)
 
 class Action(BoxLayout):
     action_type = StringProperty()
     type_button_wid = ObjectProperty()
+    set_param_btn_wid = ObjectProperty()
+    move_up_btn = ObjectProperty()
+    move_down_btn = ObjectProperty()
 
     def __init__(self, **kwargs):
         super(Action, self).__init__(**kwargs)
         self.init_type_dropdown()
+        self.parameters = None # dict of parameters to the corresponding action
 
     def init_type_dropdown(self):
         d = DropDown()
@@ -86,6 +117,39 @@ class Action(BoxLayout):
                 lambda instance, text: setattr(self.type_button_wid, 'text', text))
         self.type_button_wid.bind(on_release=d.open)
 
+    def get_parameters(self):
+        btn = self.set_param_btn_wid
+        g = GridLayout(cols=2)
+        param_temp = {}
+        if self.action_type == 'say':
+            g.add_widget(Label(text='message'))
+            t = TextInput()
+            t.bind(text=lambda _, value: param_temp.update({'message': value}))
+            g.add_widget(t)
+        elif self.action_type == 'listen':
+            g.add_widget(Label(text='intent'))
+            t = TextInput(multiline=False)
+            t.bind(text=lambda _, value: param_temp.update({'intent': value}))
+            g.add_widget(t)
+        elif self.action_type == 'play':
+            g.add_widget(Label(text='file path'))
+            t = TextInput(multiline=False)
+            t.bind(text=lambda _, value: param_temp.update({'filename': value}))
+            g.add_widget(t)
+        else:
+            return
+
+        p = Popup(title='Set parameters', size_hint=(.5, .5))
+        # btn.bind(on_release=p.open)
+
+        submit_btn = Button(text='Submit')
+        submit_btn.bind(on_release=lambda _: setattr(self, 'parameters', param_temp))
+        cancel_btn = Button(text='Cancel')
+        cancel_btn.bind(on_release=lambda _: p.dismiss())
+        g.add_widget(submit_btn)
+        g.add_widget(cancel_btn)
+        p.content = g
+        p.open()
 
 class EditScreen(Screen):
     dropdown_wid = ObjectProperty()
@@ -175,7 +239,10 @@ class EditScreen(Screen):
         p = AddActionPopup(attach_to=self)
         p.open()
         def add_action_callback(button):
-            p.actions_list_wid.add_widget(Action())
+            a = Action()
+            p.add_action(a)
+            # p.actions_list_wid.add_widget(a)
+            # p.actions_temp.append(a)
 
         p.add_action_btn_wid.bind(on_release=add_action_callback)
 
