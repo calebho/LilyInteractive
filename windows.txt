@@ -1,0 +1,3 @@
+-r requirements.txt
+pywin32 >= 214
+pyhook >= 1.5.1
