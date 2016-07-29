@@ -21,10 +21,14 @@ def get_intent(response, t=0.8):
     if intent['confidence'] > t:
         return intent['intent']
 
-def get_entities(response):
+def get_entities(response, entity_type=''):
     """Given a response, get and return the entities extracted.
     """
-    return [entity['value'].lower() for entity in response['entities']]
+    if entity_type:
+        return [entity['value'].lower() for entity in response['entities']\
+                if entity['entity'] == entity_type]
+    else:
+        return [entity['value'].lower() for entity in response['entities']]
 
 def parse(s, workspace_id):
     """Parse a string `s`

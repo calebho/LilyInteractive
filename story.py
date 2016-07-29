@@ -3,41 +3,14 @@ from __future__ import print_function
 import networkx as nx
 import random
 import inspect 
+import webbrowser
+import warnings
 
 from functools import wraps
-from parsers import parse, get_intent
+from parsers import parse, get_intent, get_entities
 from numpy.random import multinomial
 from copy import copy 
-
-def get_keys(d):
-    """Recursively get the keys of a nested dictionary and return them as a set
-    """
-    to_ret = set()
-    for k, v in d.iteritems():
-        to_ret.add(k)
-        if type(v) is dict:
-            to_ret = to_ret | get_keys(v) # union
-
-    return to_ret
-
-def get_value(d, k):
-    """Given a nested dict `d` and a key `k`, get the value of d at `k`
-
-    Returns: {dict} If `k` is not a leaf {None} If `k` is a leaf or `k` does not
-             exist
-    """
-    if not d:
-        return
-
-    keys = d.keys()
-    if k in keys:
-        return d[k]
-    else:
-        for v in d.itervalues():
-            to_ret = get_value(v, k)
-            if to_ret:
-                return to_ret
-        return
+from text_to_speech import englishify
 
 class StoryError(Exception):
     pass
@@ -109,7 +82,7 @@ class Story(nx.DiGraph):
             return []
 
     # TODO: might not be very useful
-    def run_conditions(self, n=None):
+    def get_run_conditions(self, n=None):
         """Gets the run conditions list of node `n`. If not provided, defaults
         to current. If current is not set, returns an empty list
         """
@@ -120,7 +93,7 @@ class Story(nx.DiGraph):
         else:
             return []
 
-    def dynamic_events(self, n=None):
+    def get_dynamic_events(self, n=None):
         """Gets the dynamic events dict of node `n`. If not provided, defaults
         to current. If current is not set, return an empty dict
         """
@@ -275,18 +248,38 @@ class Story(nx.DiGraph):
     def verify(self):
         """Does some simple checks to see whether the story is well formed
         """
-        self._verify_arg_dict()
         self._check_current()
         # TODO: check for circular dependencies?
 
-    def add_say(self, node, message):
-        self._add_action(node, 'say', message=message)
+    def add_say(self, node, message, only_if=None):
+        self._add_action(node, 'say', message=message, only_if=only_if)
 
-    def add_listen(self, node, intent): # TODO: more parameters probably needed
-        self._add_action(node, 'listen', intent=intent)
+    def add_listen(self, node, intent, entity_type='', n_entities=0, 
+            verify_with='', context_key='', fail_message='', only_if=None): 
+        """Add a listen action to node `node`
 
-    def add_play(self, node, filename):
-        self._add_action(node, 'listen', filename=filename)
+        Parameters:
+        node {str} The node the action is being added to
+        intent {str} The target intent of the message
+        entity_type {str} The type of entity to listen to
+        n_entities {int} The maximum number of entities to accept. 0 means
+                         no limit
+        verify_with {str} A key for self.context whose value is a list. Each
+                          entity extracted is then tested 
+        """
+        assert type(entity_type) is str
+        if context_key not in self._context:
+            warnings.warn('%s not in context' % context_key, RuntimeWarning)
+        if verify_with not in self._context:
+            warnings.warn('%s not in context' % verify_with, RuntimeWarning)
+        assert n_entities >= 0
+        self._add_action(node, 'listen', intent=intent, entity_type=entity_type, 
+                n_entities=n_entities, verify_with=verify_with, 
+                context_key=context_key, fail_message=fail_message, only_if=only_if)
+
+    def add_play(self, node, source, only_if=None):
+        # TODO: validate source???
+        self._add_action(node, 'play', source=source, only_if=only_if)
 
 ##########################################################################
 ####################### PRIVATE ##########################################
@@ -326,20 +319,25 @@ class Story(nx.DiGraph):
             return
 
         while True:
-            user_inp = self._input_fct() # TODO
+            user_inp = self._input_fct() 
+            resp = parse(user_inp, self.workspace_id)
+            intent = get_intent(resp)
 
-            if user_inp in self.neighbors(self._current):
-                if self._is_runnable(user_inp): # will output something when False
-                    return self._select(user_inp)
-            else:
+            if intent in self.neighbors(self._current):
+                if self._is_runnable(intent): # will output something when False
+                    return self._select(intent)
+            elif intent:
                 msg = "Sorry I can't go to %s" % user_inp
+                self.output_fct(msg)
+            else:
+                msg = "Sorry I didn't catch that. Could you repeat yourself?"
                 self.output_fct(msg)
                     
     def _select(self, node):
         """Selects a node to return based on the probability distrubtion
         given by `dynamic_events`
         """
-        dynamic_events = self.dynamic_events(node)
+        dynamic_events = self.get_dynamic_events(node)
         if dynamic_events:
             d_items = zip(*dynamic_events.items())
             nodes = list(d_items[0])
@@ -376,33 +374,98 @@ class Story(nx.DiGraph):
         elif action_type == 'play':
             self._play(**kwargs)
 
-    def _say(self, message):
+    def _say(self, message, only_if=None):
         """Output message
         """
-        self._output_fct(message)
+        if only_if and not self._check_only_if(*only_if):
+            return
+        context_copy = self._context.copy()
+        for k, v in context_copy.iteritems():
+            if type(v) is list and len(v) > 0:
+                if type(v[0]) is str:
+                    context_copy[k] = englishify(v)
+                elif v[0] == 0:
+                    context_copy[k] = englishify(v[1:])
+                elif v[0] == 1:
+                    context_copy[k] = englishify(v[1:], conj=False)
+                else:
+                    raise StoryError('Unknown option %s' % v[0])
+                
+        self._output_fct(message.format(**context_copy))
 
-    def _listen(self, intent):
+    def _listen(self, intent, entity_type='', n_entities=0, verify_with='', 
+            context_key='', fail_message='', only_if=None):
         """Get input and listen for intent
         """
+        if only_if and not self._check_only_if(*only_if):
+            return
+        assert self.workspace_id, 'No valid workspace ID'
         while True:
+            # transcribe audio and parse it
             inp = self._input_fct()
             resp = parse(inp, self.workspace_id)
-            if get_intent(resp) == intent:
-                pass # TODO: what to do here?
-            else:
+            if get_intent(resp) != intent.strip():
                 error_msg = "Sorry, I didn't understand what you said. " +\
                         "Could you try rephrasing?"
                 self._output_fct(error_msg)
+                continue # mismatching intent so start over
+            
+            entities = get_entities(resp)
+            # chop off entities if necessary
+            if n_entities:
+                entities = entities[:n_entities]
+            # print(entities)
+            
+            # print('key:', context_key)
+            if context_key:
+                if verify_with:
+                    # print('verifying with:', verify_with)
+                    valid_entities = self._context[verify_with]
+                    has_invalid_entities = False
+                    for entity in entities:
+                        if entity not in valid_entities:
+                            has_invalid_entities = True
+                            break
+                    if has_invalid_entities:
+                        # print('has invalid entities')
+                        default_msg = "I didn't recognize something you said. " +\
+                                "Could you repeat yourself?"
+                        msg = fail_message if fail_message else default_msg
+                        self._output_fct(msg)
+                        continue
+                if len(entities) == 0:
+                    # print('entites has len 0')
+                    pass
+                elif len(entities) == 1:
+                    # print('context updated')
+                    self._context[context_key] = entities[0]
+                else:
+                    # print('context updated')
+                    self._context[context_key] = entities
+            return # none of the continues were hit
 
-    def _play(self, filename):
-        """Play multimedia
+    def _play(self, source, only_if=None):
+        """Display media with URL `source`
+
+        Parameters:
+        source {str} The URL of the media
+        only_if {tuple} A k, v context pair that causes the node to evalute
+                        only if self.context[k] == v
         """
-        raise NotImplementedError('TODO')
+        if only_if and not self._check_only_if(*only_if):
+            return
+        webbrowser.open(source, new=2)
+
+    def _check_only_if(self, k, v):
+        if self._context[k] == v:
+            return True
+        else:
+            return False
 
     def _is_runnable(self, n):
         """Checks whether the run conditions are satisifed for node `n` 
         """
-        return self._check_conditions(self.run_conditions(n))
+        return self._check_conditions(self.get_run_conditions(n))
 
     def _check_conditions(self, l):
         """Helper for is_runnable
