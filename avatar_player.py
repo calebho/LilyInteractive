@@ -1,12 +1,23 @@
 import pyglet 
-from win32api import GetSystemMetrics
+import platform
+if platform.system() == 'Windows':
+    from win32api import GetSystemMetrics
+    w = GetSystemMetrics(0)
+    h = GetSystemMetrics(1)
+elif platform.system() == 'Linux':
+    import subprocess
+    output = subprocess.check_output("xrandr  | grep \* | cut -d' ' -f4", shell=True)
+    output = output.strip()
+    w, h = map(int, output.split('x'))
+else:
+    raise RuntimeError('Unable to get screen resolution')
 
 talk = False
 
 def run_avatar():
     animation = pyglet.resource.animation("AvatarGifs/lily_idle.gif")
     sprite = pyglet.sprite.Sprite(animation)
-    sprite.set_position((GetSystemMetrics(0) - sprite.width)/2, (GetSystemMetrics(1) - sprite.height)/2)
+    sprite.set_position((w - sprite.width)/2, (h - sprite.height)/2)
     #create a window and set it to fullscreen
     win = pyglet.window.Window(fullscreen = True)
     win.set_location(0,0)
@@ -31,6 +42,9 @@ def run_avatar():
         sprite.image = animation2
         on_draw()
     pyglet.app.run()
+
+if __name__ == '__main__':
+    run_avatar()
         
         
 
