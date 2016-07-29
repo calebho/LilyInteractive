@@ -5,6 +5,7 @@ import time
 from StringIO import StringIO
 from watson_developer_cloud import TextToSpeechV1
 from timeout import timeout_decorate, TimeoutError
+from pymouse import PyMouse
 
 # define enter/exit methods for use in a context manager
 StringIO.__enter__ = lambda self: self
@@ -14,6 +15,13 @@ TextToSpeechV1.synthesize = timeout_decorate(TextToSpeechV1.synthesize, seconds=
 tts = TextToSpeechV1(username='68819f91-e8a5-49e3-b284-3b66ed470bb9',
                      password='1tkAyaLoSdhm')
 wf = None # the wave file
+
+m = PyMouse()
+def click():
+    """Click the mouse to start/stop avatar animation
+    """
+    x, y = map(lambda n: n/2, m.screen_size())
+    m.click(x, y, 1)
 
 class SpeechError(Exception):
     pass
@@ -49,12 +57,14 @@ def speak(s):
                         output=True,
                         stream_callback=callback)
 
+        click()
         stream.start_stream()
         while stream.is_active():
             time.sleep(0.1)
         stream.stop_stream()
         stream.close()
         p.terminate()
+        click()
 
 def wrap_text(s, t=None):
     """Wrap a string `s` with speak and express-as tags using type `t`
@@ -87,56 +97,3 @@ def main():
 if __name__ == '__main__':
     main()
 
-"""
-import pyttsx
-import win32con, win32api
-
-
-'''This file handles the text to speech aspect of the interactive story using the pyttsx module to
-produce the speech. Additionally, we use the win32api module for python, which encapsulates the Windows win32api, allowing
-us to send a click to our avatar. Each click changes the current avatar animation being run, simulating a talking or idle state. '''
-
-def onStart(name):
-        click(100,100)
-
-def onEnd(name, completed):
-        click(100,100)
-
-engine = pyttsx.init()
-engine.connect("started-utterance", onStart)
-engine.connect("finished-utterance", onEnd)
-#get functions return current state of speech engine
-voices = engine.getProperty('voices')
-rate = engine.getProperty('rate')
-volume = engine.getProperty('volume')
-#set the speaking volume
-engine.setProperty('volume', volume + .99)
-#set the speaking rate
-#engine.setProperty('rate', rate - 40)
-#set the voice to one of three
-engine.setProperty('voice', voices[1].id)
-
-
-import ctypes
-import time
-import math
-
-#lib = ctypes.CDLL('FakeInputWin')
-
-def speak(string):
-        engine.say(string)
-        engine.runAndWait()
-        print string
-
-
-def click(x,y):
-        win32api.SetCursorPos((x,y))
-        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN,x,y,0,0)
-        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP,x,y,0,0)
-
-
-
-#IN THE EVENT BALDISYNC IS USED REPLACE SPEAK WITH BELOW CODE
-#lib.typeInBaldi(string)
-#time.sleep(2*math.log10(len(string)) + 1)
-"""
