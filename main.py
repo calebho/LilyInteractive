@@ -12,6 +12,7 @@ from functools import partial
 from kivy.config import Config
 # disable multitouch from mouse
 Config.set('input', 'mouse', 'mouse,disable_multitouch')
+Config.set('input', 'mouse', 'mouse,disable_on_activity')
 
 from kivy.app import App
 from kivy.core.window import Window
@@ -49,7 +50,8 @@ class HomeScreen(Screen):
     pass
 
 class FileBrowserPopup(Popup):
-    pass
+    action_btn = ObjectProperty()
+    filename_inp = ObjectProperty()
 
 class FileBrowserContent(BoxLayout):
     pass
@@ -103,9 +105,14 @@ class AddActionPopup(Popup):
                     self.actions_temp[i], self.actions_temp[i+1] =\
                             self.actions_temp[i+1], self.actions_temp[i]
             self.render_actions()
+
+        def remove_action(button):
+            self.actions_list_wid.remove_widget(action)
+            self.actions_temp.remove(action)
             
         action.move_up_btn.bind(on_release=move_action_up)
         action.move_down_btn.bind(on_release=move_action_down)
+        action.remove_btn.bind(on_release=remove_action)
         self.actions_list_wid.add_widget(action)
         self.actions_temp.append(action)
 
@@ -120,6 +127,7 @@ class Action(BoxLayout):
     set_param_btn_wid = ObjectProperty()
     move_up_btn = ObjectProperty()
     move_down_btn = ObjectProperty()
+    remove_btn = ObjectProperty()
 
     def __init__(self, **kwargs):
         super(Action, self).__init__(**kwargs)
@@ -149,6 +157,12 @@ class Action(BoxLayout):
         btn = self.set_param_btn_wid
         g = GridLayout(cols=2)
         param_temp = {}
+        
+        def only_if_callback(instance, value):
+            value = value.strip()
+            if value:
+                param_temp['only_if'] = tuple(value.split(','))
+
         if self.action_type == 'say':
             g.add_widget(Label(text='message'))
             t = TextInput()
@@ -158,6 +172,16 @@ class Action(BoxLayout):
                 except KeyError: 
                     pass
             t.bind(text=lambda _, value: param_temp.update({'message': value}))
+            g.add_widget(t)
+
+            g.add_widget(Label(text='only if'))
+            t = TextInput()
+            if self.parameters:
+                try:
+                    t.text = self.parameters['only_if']
+                except KeyError: 
+                    pass
+            t.bind(text=only_if_callback)
             g.add_widget(t)
         elif self.action_type == 'listen':
             g.add_widget(Label(text='intent'))
@@ -169,20 +193,59 @@ class Action(BoxLayout):
                     pass
             t.bind(text=lambda _, value: param_temp.update({'intent': value}))
             g.add_widget(t)
+
+            label_dict = {
+                    'entity type': 'entity_type',
+                    'maximum entities': 'n_entities',
+                    'verify with context at': 'verify_with',
+                    'update context at': 'context_key',
+                    'failure message': 'fail_message',
+                    'only if': 'only_if'}
+            for k, v in label_dict.iteritems():
+                g.add_widget(Label(text=k))
+                t = TextInput()
+                if k == 'failure message':
+                    t.multiline = True
+                if self.parameters:
+                    try:
+                        t.text = self.parameters[v]
+                    except KeyError:
+                        pass
+                if k == 'maximum entities':
+                    def int_callback(instance, value):
+                        value = value.strip()
+                        if value:
+                            param_temp['n_entities'] = int(value)
+                    t.bind(text=int_callback)
+                elif k == 'only if':
+                    t.bind(text=only_if_callback)
+                else:
+                    t.bind(text=lambda _, value: param_temp.update({v: value}))
+                g.add_widget(t)
         elif self.action_type == 'play':
-            g.add_widget(Label(text='file path'))
+            g.add_widget(Label(text='source'))
             t = TextInput(multiline=False)
             if self.parameters:
                 try:
-                    t.text = self.parameters['filename']
+                    t.text = self.parameters['source']
                 except KeyError:
                     pass
-            t.bind(text=lambda _, value: param_temp.update({'filename': value}))
+            t.bind(text=lambda _, value: param_temp.update({'source': value}))
+            g.add_widget(t)
+            
+            g.add_widget(Label(text='only if'))
+            t = TextInput()
+            if self.parameters:
+                try:
+                    t.text = self.parameters['only_if']
+                except KeyError: 
+                    pass
+            t.bind(text=only_if_callback)
             g.add_widget(t)
         else:
             return
 
-        p = Popup(title='Set parameters', size_hint=(.5, .2))
+        p = Popup(title='Set parameters', size_hint=(.5, .8))
         # btn.bind(on_release=p.open)
 
         def submit_callback(button):
@@ -212,6 +275,7 @@ class EditScreen(Screen):
         self.story = Story()
         self.current_node = None
         self.refresh_btn.bind(on_release=self.refresh_graph)
+        self.current_file = ''
 
     def init_node_select_dropdown(self):
         self.d = d = DropDown()
@@ -221,10 +285,37 @@ class EditScreen(Screen):
         d.bind(on_select=lambda _, text: setattr(self.dropdown_btn_wid, 'text', text))
         self.dropdown_btn_wid.bind(on_release=d.open)
 
-    def show_file_chooser(self):
-        file_window = FileBrowserPopup(attach_to=self)
-        file_window.board = self.ids['board']
-        file_window.open()
+    def show_file_browser(self, action):
+        p = FileBrowserPopup()
+        p.filename_inp.bind(text=self.update_current_file)
+
+        if action == 'save':
+            p.action_btn.text = 'Save'
+
+            def save(button):
+                filename = self.current_file.strip()
+                if not filename:
+                    return
+
+                # check whether user has appended '.story' filename extension
+                filename = filename.split('.')
+                if len(filename) == 1 or filename[-1] != 'story':
+                    filename.append('story')
+                filename = '.'.join(filename)
+                with open(filename, 'w') as f:
+                    pickle.dump(self.story, f)
+                p.dismiss()
+            p.action_btn.bind(on_release=save)
+            p.open()
+        elif action == 'load':
+            p.action_btn.text = 'Load'
+            p.action_btn.bind(on_release=self.load_story)
+
+    def update_current_file(self, instance, text):
+        self.current_file = text
+
+    def load_story(self, button):
+        pass
 
     def check_current_file(self):
         board = self.ids['board']

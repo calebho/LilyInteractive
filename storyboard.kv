@@ -19,6 +19,8 @@
 <FileBrowserPopup>:
   title: 'File system'
   size_hint: .9, .9
+  action_btn: action_btn
+  filename_inp: filename_inp
 
   BoxLayout:
     orientation: 'vertical'
@@ -46,12 +48,12 @@
       height: dp(30)
       
       TextInput:
-        id: textbox
+        id: filename_inp
         size_hint_x: .8
       Button:
+        id: action_btn
         size_hint_x: .1
-        text: 'Save'
-        on_press: root.board.save_story(textbox.text + '.story'); root.dismiss()
+        # on_press: root.board.save_story(textbox.text + '.story'); root.dismiss()
       Button:
         size_hint_x: .1
         text: 'Cancel'
@@ -88,6 +90,7 @@
   set_param_btn_wid: parameters
   move_up_btn: move_up
   move_down_btn: move_down
+  remove_btn: remove_btn
 
   canvas.before:
     Color:
@@ -101,7 +104,7 @@
     text: 'type'
   Button:
     id: parameters
-    size_hint_x: .6
+    size_hint_x: .45
     text: 'set parameters'
     on_release: root.get_parameters()
   Button:
@@ -112,6 +115,10 @@
     id: move_down
     text: 'Down'
     size_hint_x: .12
+  Button:
+    id: remove_btn
+    text: 'Remove'
+    size_hint_x: .15
 
 <AddActionPopup>:
   actions_list_wid: actions_list
@@ -197,27 +204,35 @@
   refresh_btn: refresh_btn
   storyboard_wid: storyboard
 
-  BoxLayout:
-    size_hint: 1, 0.075
-    pos_hint: {'x': 0, 'y': .925}
-    
-    Button:
-      text: 'Home'
-      on_press: root.manager.current = 'home'
-    Button:
-      text: 'Save'
-      on_press: root.check_current_file()
-    Button:
-      text: 'Save as'
-      on_press: root.show_file_chooser()
+  # BoxLayout:
+  #   size_hint: 1, 0.075
+  #   pos_hint: {'x': 0, 'y': .925}
+  #   
+  #   Button:
+  #     text: 'Home'
+  #     on_press: root.manager.current = 'home'
+  #   Button:
+  #     text: 'Save'
+  #     on_press: root.check_current_file()
+  #   Button:
+  #     text: 'Save as'
+  #     on_press: root.show_file_chooser()
   
   BoxLayout:
-    size_hint: 1, 0.925
+    # size_hint: 1, 0.925
     
     BoxLayout:
       size_hint: .3, 1
       orientation: 'vertical'
     
+      Button:
+        text: 'save'
+        size_hint_y: .1
+        on_release: root.show_file_browser('save')
+      Button:
+        text: 'load'
+        size_hint_y: .1
+        on_release: root.show_file_browser('load')
       Button:
         id: refresh_btn
         text: 'refresh'
@@ -229,7 +244,7 @@
           
       GridLayout:
         id: node_info
-        size_hint_y: .8
+        size_hint_y: .6
         cols: 2
         row_default_height: dp(40)
         row_force_default: True
