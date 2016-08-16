@@ -267,7 +267,7 @@ class Story(nx.DiGraph):
         verify_with {str} A key for self.context whose value is a list. Each
                           entity extracted is then tested 
         """
-        assert type(entity_type) is str
+        # assert type(entity_type) is str, 'entity_type is %s' % type(entity_type)
         if context_key not in self._context:
             warnings.warn('%s not in context' % context_key, RuntimeWarning)
         if verify_with not in self._context:

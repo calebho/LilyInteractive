@@ -62,8 +62,7 @@ def movie_story_factory():
     s.add_node('box_office')
     s.add_node('concessions')
     s.add_node('auditorium')
-    # s.current = 'movie_greeting'
-    s.current = 'box_office'
+    s.current = 'movie_greeting'
     set_actions(s)
 
     # dependencies = {actions.ticket_checker: {actions.box_office: None}}
