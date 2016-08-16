@@ -52,6 +52,9 @@ class HomeScreen(Screen):
 class FileBrowserPopup(Popup):
     action_btn = ObjectProperty()
     filename_inp = ObjectProperty()
+    file_chooser = ObjectProperty()
+    current_path = StringProperty()
+    selected_file = StringProperty()
 
 class FileBrowserContent(BoxLayout):
     pass
@@ -287,35 +290,65 @@ class EditScreen(Screen):
 
     def show_file_browser(self, action):
         p = FileBrowserPopup()
-        p.filename_inp.bind(text=self.update_current_file)
 
-        if action == 'save':
+        def update_current_file(instance, text):
+            self.current_file = p.current_path + '/' + text.strip()
+
+        if action == 'save as':
+            p.filename_inp.bind(text=update_current_file)
             p.action_btn.text = 'Save'
 
             def save(button):
-                filename = self.current_file.strip()
-                if not filename:
-                    return
-
-                # check whether user has appended '.story' filename extension
-                filename = filename.split('.')
-                if len(filename) == 1 or filename[-1] != 'story':
-                    filename.append('story')
-                filename = '.'.join(filename)
-                with open(filename, 'w') as f:
-                    pickle.dump(self.story, f)
+                self.save_current()
                 p.dismiss()
             p.action_btn.bind(on_release=save)
             p.open()
         elif action == 'load':
             p.action_btn.text = 'Load'
-            p.action_btn.bind(on_release=self.load_story)
+            
+            def load(button):
+                path = p.selected_file
+                self.load_story(path)
+                p.dismiss()
+            p.action_btn.bind(on_release=load)
+            p.open()
 
-    def update_current_file(self, instance, text):
-        self.current_file = text
+    def save_current(self):
+        if self.current_file:
+            filename = self.current_file.strip()
+            
+            # check whether user has appended '.story' filename extension
+            filename = filename.split('.')
+            if len(filename) == 1 or filename[-1] != 'story':
+                filename.append('story')
+            filename = '.'.join(filename)
+            print(filename)
+            with open(filename, 'w') as f:
+                pickle.dump(self.story, f)
+        else:
+            self.show_file_browser('save as')
 
-    def load_story(self, button):
-        pass
+    def load_story(self, path):
+        # TODO: check whether current file is saved
+        with open(path, 'r') as f:
+            try:
+                obj = pickle.load(f)
+            except IOError as e:
+                print(str(e))
+                return
+
+            if isinstance(obj, Story):
+                self.story = obj
+            else:
+                # TODO: display helpful message
+                return
+
+            for node in self.story:
+                b = Button(text=node, size_hint_y=None, height=dp(30)) 
+                b.bind(on_release=self.show_info_callback)
+                self.d.add_widget(b)
+
+            self.refresh_graph()
 
     def check_current_file(self):
         board = self.ids['board']
@@ -324,7 +357,7 @@ class EditScreen(Screen):
         else:
             self.show_file_chooser()
 
-    def refresh_graph(self, button):
+    def refresh_graph(self, *args):
         g = self.story
         plt.clf()
         nx.draw_networkx(g, node_size=2000, font_size=dp(16), node_shape=',')
@@ -345,34 +378,6 @@ class EditScreen(Screen):
         p = AddNodePopup(attach_to=self)
         p.open()
         
-        def show_info_callback(button):
-            """Shows the node information in the sidebar
-            """
-            self.current_node = button.text
-            self.d.select(button.text)
-            # p.dismiss()
-            node_info = self.node_info_wid
-            node_info.clear_widgets()
-            
-            node_info.add_widget(Label(text='name:'))
-            # TODO: allow node renaming?
-            node_info.add_widget(TextInput(text=button.text, multiline=False))
-
-            node_info.add_widget(Label(text='actions:'))
-            actions_b = Button(text='edit...')
-            actions_b.bind(on_release=self.show_add_action_popup)
-            node_info.add_widget(actions_b)
-
-            node_info.add_widget(Label(text='destinations:'))
-            dest_b = Button(text='edit...')
-            dest_b.bind(on_release=self.show_add_dest_popup)
-            node_info.add_widget(dest_b)
-
-            node_info.add_widget(Label(text='origins:'))
-            orig_b = Button(text='edit...')
-            orig_b.bind(on_release=self.show_add_origin_popup)
-            node_info.add_widget(orig_b)
-
         def add_callback(button):
             """Add the node to the story and update the dropdown menu
             """
@@ -384,9 +389,37 @@ class EditScreen(Screen):
 
             # update the dropdown menu
             b = Button(text=node_name, size_hint_y=None, height=dp(30)) 
-            b.bind(on_release=show_info_callback)
+            b.bind(on_release=self.show_info_callback)
             self.d.add_widget(b)
         p.submit_btn_wid.bind(on_release=add_callback)
+
+    def show_info_callback(self, button):
+        """Shows the node information in the sidebar
+        """
+        self.current_node = button.text
+        self.d.select(button.text)
+        # p.dismiss()
+        node_info = self.node_info_wid
+        node_info.clear_widgets()
+        
+        node_info.add_widget(Label(text='name:'))
+        # TODO: allow node renaming?
+        node_info.add_widget(TextInput(text=button.text, multiline=False))
+
+        node_info.add_widget(Label(text='actions:'))
+        actions_b = Button(text='edit...')
+        actions_b.bind(on_release=self.show_add_action_popup)
+        node_info.add_widget(actions_b)
+
+        node_info.add_widget(Label(text='destinations:'))
+        dest_b = Button(text='edit...')
+        dest_b.bind(on_release=self.show_add_dest_popup)
+        node_info.add_widget(dest_b)
+
+        node_info.add_widget(Label(text='origins:'))
+        orig_b = Button(text='edit...')
+        orig_b.bind(on_release=self.show_add_origin_popup)
+        node_info.add_widget(orig_b)
 
     def show_add_action_popup(self, button):
         p = AddActionPopup(existing_actions=self.story.get_actions(self.current_node),

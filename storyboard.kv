@@ -21,6 +21,8 @@
   size_hint: .9, .9
   action_btn: action_btn
   filename_inp: filename_inp
+  current_path: fc.path
+  selected_file: fc.selection[0] if fc.selection else ''
 
   BoxLayout:
     orientation: 'vertical'
@@ -225,10 +227,15 @@
       size_hint: .3, 1
       orientation: 'vertical'
     
-      Button:
-        text: 'save'
+      BoxLayout:
+        orientation: 'horizontal'
         size_hint_y: .1
-        on_release: root.show_file_browser('save')
+        Button:
+          text: 'save'
+          on_release: root.save_current()
+        Button:
+          text: 'save as'
+          on_release: root.show_file_browser('save as')
       Button:
         text: 'load'
         size_hint_y: .1
